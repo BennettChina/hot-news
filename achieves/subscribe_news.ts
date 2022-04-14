@@ -2,6 +2,7 @@ import { InputParameter } from "@modules/command";
 import { MessageType } from "@modules/message";
 import { getNews } from "#hot-news/util/api";
 import { getChatInfo } from "#hot-news/util/tools";
+import { AuthLevel } from "@modules/management/auth";
 
 export const CHANNEL_NAME = {
 	toutiao: '头条',
@@ -27,9 +28,9 @@ export const getChannelKey: ( channel: string ) => ( string | null ) = ( channel
 }
 
 
-export async function main( { sendMessage, messageData, redis, client, config }: InputParameter ): Promise<void> {
+export async function main( { sendMessage, messageData, redis, client, auth }: InputParameter ): Promise<void> {
 	const channel = messageData.raw_message || '头条';
-	const { type, targetId } = getChatInfo( messageData );
+	const { type, targetId, user_id } = getChatInfo( messageData );
 	if ( type === MessageType.Unknown ) {
 		await sendMessage( '不支持的聊天来源,请在需要订阅的群里或者好友对话中使用!' );
 		return;
@@ -63,13 +64,11 @@ export async function main( { sendMessage, messageData, redis, client, config }:
 			} );
 		} );
 	} else {
-		// 检查bot是否在用户设置到群里
-		client.getGroupMemberInfo( targetId, config.number ).then( res => {
-			if ( res.retcode !== 0 ) {
-				sendMessage( 'BOT未加入该群，请核实群号！' );
-				return;
-			}
-		} )
+		const check = await auth.check( user_id, AuthLevel.Manager )
+		if ( !check ) {
+			await sendMessage( '您的权限不能使用该指令', true );
+			return;
+		}
 		
 		await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: channelKey } );
 		redis.addSetMember( DB_KEY.ids, db_data ).then( () => {

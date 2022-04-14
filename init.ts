@@ -16,7 +16,7 @@ const subscribe_news: OrderConfig = {
 	headers: [ "subscribe_news" ],
 	regexps: [ ".*" ],
 	scope: MessageScope.Both,
-	auth: AuthLevel.Manager,
+	auth: AuthLevel.User,
 	main: "achieves/subscribe_news",
 	detail: "订阅每日热点新闻，可用的订阅源包括：新浪、知乎、网易、头条、百度，默认使用头条，仅可使用一个源覆盖订阅(每天8:30~9点推送)。"
 };
@@ -28,7 +28,7 @@ const unsubscribe_news: OrderConfig = {
 	headers: [ "unsubscribe_news" ],
 	regexps: [ "" ],
 	scope: MessageScope.Both,
-	auth: AuthLevel.Manager,
+	auth: AuthLevel.User,
 	main: "achieves/unsubscribe_news",
 	detail: "取消订阅的新闻"
 };
