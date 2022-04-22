@@ -1,4 +1,4 @@
-本项目为 https://github.com/SilveryStar/Adachi-BOT 衍生插件，用于订阅热点新闻。
+本项目为 https://github.com/SilveryStar/Adachi-BOT 衍生插件，用于订阅热点新闻，使用的是 [AnyKnew](https://www.anyknew.com/#/) 网站的API。
 
 ## 安装
 
@@ -49,3 +49,7 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 
 - 2022/04/14 新闻推送时间优化为8:30~9点。
 - 2022/04/14 修复初始权限太高导致私聊订阅常规用户无法订阅的问题，改为群里使用管理员权限，私聊使用常规用户权限。
+
+## 感谢
+
+- 感谢 [AnyKnew](https://www.anyknew.com/#/) 站长提供的API
