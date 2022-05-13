@@ -119,7 +119,8 @@ const notifyGenshin = async ( browser: puppeteer.Browser ) => {
 			}
 			
 			// B站直播推送
-			if ( !liveDynamic ) {
+			const notification_status = await bot.redis.getString( DB_KEY.genshin_live_notified );
+			if ( !liveDynamic && !notification_status ) {
 				const live = await getBiliLive();
 				if ( live.liveRoom.liveStatus === 1 ) {
 					const image = segment.image( live.liveRoom.cover, true, 10000 );
@@ -130,6 +131,7 @@ const notifyGenshin = async ( browser: puppeteer.Browser ) => {
 					} else {
 						await bot.client.sendGroupMsg( targetId, msg );
 					}
+					await bot.redis.setString( DB_KEY.genshin_live_notified, "1", 8 * 60 * 60 );
 				}
 			}
 		} )
