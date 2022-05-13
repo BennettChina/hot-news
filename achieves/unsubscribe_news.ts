@@ -25,6 +25,7 @@ export async function main( { sendMessage, messageData, redis, auth }: InputPara
 			await redis.delSetMember( DB_KEY.genshin_ids, member );
 			await sendMessage( `[${ targetId }]已取消订阅原神动态` );
 		}
+		return;
 	}
 	
 	// 处理新闻订阅
