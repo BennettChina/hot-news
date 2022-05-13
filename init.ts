@@ -90,41 +90,46 @@ const notifyGenshin = async ( browser: puppeteer.Browser ) => {
 			}: { targetId: number, type: number } = JSON.parse( sub );
 			// B站动态信息推送
 			const r = await getBiliDynamicNew();
+			let liveDynamic: boolean = false;
 			if ( r ) {
 				const page = await browser.newPage()
-				// 专栏类型
-				if ( r.type === 'DYNAMIC_TYPE_ARTICLE' ) {
-					await page.goto( `https://www.bilibili.com/read/cv${ r.basic.rid_str }`, { waitUntil: "networkidle2" } )
-					const el = await page.waitForSelector( ".article-container__content" );
-					const res = await el?.screenshot( { type: "jpeg", encoding: "base64" } );
-					const base64: string = `base64://${ res }`;
-					const cqCode: string = `[CQ:image,file=${ base64 }]`;
-					const msg = `B站原神发布新动态了!\n${ cqCode }`;
-					if ( type === MessageType.Private ) {
-						await bot.client.sendPrivateMsg( targetId, msg )
+				for ( let card of r ) {
+					// 专栏类型
+					if ( card.type === 'DYNAMIC_TYPE_ARTICLE' ) {
+						await page.goto( `https://www.bilibili.com/read/cv${ card.basic.rid_str }`, { waitUntil: "networkidle2" } )
+						const el = await page.waitForSelector( ".article-container__content" );
+						const res = await el?.screenshot( { type: "jpeg", encoding: "base64" } );
+						const base64: string = `base64://${ res }`;
+						const cqCode: string = `[CQ:image,file=${ base64 }]`;
+						const msg = `B站原神发布新动态了!\n${ cqCode }`;
+						if ( type === MessageType.Private ) {
+							await bot.client.sendPrivateMsg( targetId, msg )
+						} else {
+							await bot.client.sendGroupMsg( targetId, msg );
+						}
+						await page.close()
+					} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
+						// 直播动态处理完后直接返回，不需要后续再查询
+						await normalDynamicHandle( page, card, type, targetId );
+						liveDynamic = true;
 					} else {
-						await bot.client.sendGroupMsg( targetId, msg );
+						await normalDynamicHandle( page, card, type, targetId );
 					}
-					await page.close()
-				} else if ( r.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
-					// 直播动态处理完后直接返回，不需要后续再查询
-					await normalDynamicHandle( page, r, type, targetId );
-					return;
-				} else {
-					await normalDynamicHandle( page, r, type, targetId );
 				}
 			}
 			
 			// B站直播推送
-			const live = await getBiliLive();
-			if ( live.liveRoom.liveStatus === 1 ) {
-				const image = segment.image( live.liveRoom.cover, true, 10000 );
-				const cqCode = segment.toCqcode( image );
-				let msg = `B站${ live.name }开播啦!\n标题：${ live.liveRoom.title }\n直播间：${ live.liveRoom.url }\n${ cqCode }`
-				if ( type === MessageType.Private ) {
-					await bot.client.sendPrivateMsg( targetId, msg );
-				} else {
-					await bot.client.sendGroupMsg( targetId, msg );
+			if ( !liveDynamic ) {
+				const live = await getBiliLive();
+				if ( live.liveRoom.liveStatus === 1 ) {
+					const image = segment.image( live.liveRoom.cover, true, 10000 );
+					const cqCode = segment.toCqcode( image );
+					let msg = `B站${ live.name }开播啦!\n标题：${ live.liveRoom.title }\n直播间：${ live.liveRoom.url }\n${ cqCode }`
+					if ( type === MessageType.Private ) {
+						await bot.client.sendPrivateMsg( targetId, msg );
+					} else {
+						await bot.client.sendGroupMsg( targetId, msg );
+					}
 				}
 			}
 		} )

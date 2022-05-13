@@ -138,7 +138,7 @@ export interface BiliLiveInfo {
 /**
  * 获取B站空间动态列表
  */
-export const getBiliDynamicNew: () => Promise<BiliDynamicCard | null> = async () => {
+export const getBiliDynamicNew: () => Promise<BiliDynamicCard[] | null> = async () => {
 	return new Promise( ( resolve, reject ) => {
 		axios.get( API.biliDynamic, {
 			params: {
@@ -162,7 +162,7 @@ export const getBiliDynamicNew: () => Promise<BiliDynamicCard | null> = async ()
 				&& c.modules.module_author.pub_ts * 1000 > ( Date.now() - 1000 * 60 * 3 )
 				&& ( !c.modules.module_dynamic.desc || c.modules.module_dynamic.desc.text.search( reg ) === -1 ) );
 			if ( filter_items.length > 0 ) {
-				resolve( filter_items[0] );
+				resolve( filter_items );
 			} else {
 				resolve( null );
 			}
