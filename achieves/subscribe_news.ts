@@ -9,12 +9,14 @@ export const CHANNEL_NAME = {
 	sina: '新浪',
 	wangyi: '网易',
 	zhihu: '知乎',
-	baidu: '百度'
+	baidu: '百度',
+	genshin: '原神'
 }
 
 export const DB_KEY = {
 	ids: "hot_news.subscribe_ids",
-	channel: "hot_news.subscribe_channel"
+	channel: "hot_news.subscribe_channel",
+	genshin_ids: 'hot_news.sub_genshin_ids'
 }
 
 export const getChannelKey: ( channel: string ) => ( string | null ) = ( channel ) => {
@@ -28,7 +30,7 @@ export const getChannelKey: ( channel: string ) => ( string | null ) = ( channel
 }
 
 
-export async function main( { sendMessage, messageData, redis, client, auth }: InputParameter ): Promise<void> {
+export async function main( { sendMessage, messageData, redis, auth }: InputParameter ): Promise<void> {
 	const channel = messageData.raw_message || '头条';
 	const { type, targetId, user_id } = getChatInfo( messageData );
 	if ( type === MessageType.Unknown ) {
@@ -48,35 +50,28 @@ export async function main( { sendMessage, messageData, redis, client, auth }: I
 	
 	const db_data = JSON.stringify( { targetId, type } );
 	
-	if ( type === MessageType.Private ) {
-		client.getStrangerInfo( targetId ).then( res => {
-			if ( res.retcode !== 0 ) {
-				sendMessage( `[${ targetId }]不是一个QQ号` );
-				return;
-			}
-		} )
-		
-		await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: channelKey } );
-		redis.addSetMember( DB_KEY.ids, db_data ).then( () => {
-			sendMessage( `[${ targetId }]已订阅[${ channel }]新闻。` );
-			getNews( channelKey! ).then( news => {
-				client.sendPrivateMsg( targetId, news );
-			} );
-		} );
-	} else {
+	if ( type === MessageType.Group ) {
 		const check = await auth.check( user_id, AuthLevel.Manager )
 		if ( !check ) {
 			await sendMessage( '您的权限不能使用该指令', true );
 			return;
 		}
-		
-		await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: channelKey } );
-		redis.addSetMember( DB_KEY.ids, db_data ).then( () => {
-			sendMessage( `[${ targetId }]已订阅[${ channel }]新闻。` );
-			getNews( channelKey! ).then( news => {
-				client.sendGroupMsg( targetId, news );
-			} );
-		} );
 	}
+	
+	// 处理原神B站动态订阅
+	if ( channel === CHANNEL_NAME.genshin ) {
+		await redis.addSetMember( DB_KEY.genshin_ids, db_data );
+		await sendMessage( `[${ targetId }]已订阅B站原神动态和直播。` );
+		return;
+	}
+	
+	// 处理新闻订阅
+	await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: channelKey } );
+	redis.addSetMember( DB_KEY.ids, db_data ).then( () => {
+		sendMessage( `[${ targetId }]已订阅[${ channel }]新闻。` );
+		getNews( channelKey! ).then( news => {
+			sendMessage( news );
+		} );
+	} );
 	
 }

@@ -39,7 +39,12 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 范围: 群/私聊
 权限: 用户 (User)
 
-#取消订阅
+# 订阅原神
+命令: <header> subscribe_news 原神
+范围: 群/私聊
+权限: 用户 (User)
+
+#取消订阅(选择服务),可选服务：[新闻｜原神]，默认取消新闻服务
 命令: <header> unsubscribe_news
 范围: 群/私聊
 权限: 用户 (User)
@@ -47,6 +52,7 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 
 ## 更新日志
 
+- 2022/05/13 增加B站原神动态订阅
 - 2022/04/14 新闻推送时间优化为8:30~9点。
 - 2022/04/14 修复初始权限太高导致私聊订阅常规用户无法订阅的问题，改为群里使用管理员权限，私聊使用常规用户权限。
 
