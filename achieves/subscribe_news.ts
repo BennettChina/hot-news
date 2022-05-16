@@ -17,7 +17,8 @@ export const DB_KEY = {
 	ids: "hot_news.subscribe_ids",
 	channel: "hot_news.subscribe_channel",
 	genshin_ids: 'hot_news.sub_genshin_ids',
-	genshin_live_notified: 'hot_news.genshin_live_notified'
+	genshin_live_notified: 'hot_news.genshin_live_notified',
+	genshin_dynamic_ids_key: 'hot_news.genshin_dynamic_ids'
 }
 
 export const getChannelKey: ( channel: string ) => ( string | null ) = ( channel ) => {

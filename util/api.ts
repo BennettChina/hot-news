@@ -150,16 +150,15 @@ export const getBiliDynamicNew: () => Promise<BiliDynamicCard[] | null> = async 
 		} ).then( r => {
 			const data = r.data;
 			if ( data.code !== 0 ) {
-				bot.logger.error( '获取B站原神动态失败,code is [{}], reason: {}', data.code, data.message || data.msg );
+				bot.logger.error( `获取B站原神动态失败,code is [${ data.code }], reason: ${ data.message || data.msg }` );
 				reject( '获取B站原神动态失败' );
 				return;
 			}
 			
 			const { items }: { items: BiliDynamicCard[] } = data.data;
 			const reg = new RegExp( /恭喜.*中奖/ );
-			// 历史消息、开奖消息过滤掉
+			// 无法显示消息、开奖消息过滤掉
 			let filter_items = items.filter( c => c.visible
-				&& c.modules.module_author.pub_ts * 1000 > ( Date.now() - 1000 * 60 * 3 )
 				&& ( !c.modules.module_dynamic.desc || c.modules.module_dynamic.desc.text.search( reg ) === -1 ) );
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
@@ -179,7 +178,7 @@ export const getBiliLive: () => Promise<BiliLiveInfo> = async () => {
 			}
 		} ).then( r => {
 			if ( r.data.code !== 0 ) {
-				bot.logger.error( '获取B站原神个人信息失败,code is [{}], reason: {}', r.data.code, r.data.message || r.data.msg );
+				bot.logger.error( `获取B站原神个人信息失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
 				reject( '获取B站原神个人信息失败' );
 				return;
 			}

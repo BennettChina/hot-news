@@ -92,8 +92,15 @@ const notifyGenshin = async ( browser: puppeteer.Browser ) => {
 			const r = await getBiliDynamicNew();
 			let liveDynamic: boolean = false;
 			if ( r ) {
-				const page = await browser.newPage()
+				const page = await browser.newPage();
+				const ids = await bot.redis.getSet( DB_KEY.genshin_dynamic_ids_key );
 				for ( let card of r ) {
+					if ( ids.includes( card.id_str ) ) {
+						bot.logger.debug( `[hot-news]历史动态[${ card.id_str }]，跳过推送!` );
+						continue;
+					}
+					
+					bot.logger.info( `[hot-news]获取到B站原神新动态[${ card.modules.module_dynamic.desc?.text }]` );
 					// 专栏类型
 					if ( card.type === 'DYNAMIC_TYPE_ARTICLE' ) {
 						await page.goto( `https://www.bilibili.com/read/cv${ card.basic.rid_str }`, { waitUntil: "networkidle2" } )
@@ -115,6 +122,9 @@ const notifyGenshin = async ( browser: puppeteer.Browser ) => {
 					} else {
 						await normalDynamicHandle( page, card, type, targetId );
 					}
+					
+					// 把新的动态ID加入本地数据库
+					await bot.redis.addSetMember( DB_KEY.genshin_dynamic_ids_key, card.id_str );
 				}
 			}
 			
@@ -153,10 +163,10 @@ const launchBrowser: () => Promise<puppeteer.Browser> = async () => {
 					height: 1000
 				}
 			} );
-			bot.logger.info( "浏览器启动成功" );
+			bot.logger.info( "[hot-news]浏览器启动成功" );
 			resolve( browser );
 		} catch ( error ) {
-			const err: string = `浏览器启动失败: ${ ( <Error>error ).stack }`;
+			const err: string = `[hot-news]浏览器启动失败: ${ ( <Error>error ).stack }`;
 			await bot.message.sendMaster( err );
 			bot.logger.error( err );
 		}
@@ -175,6 +185,15 @@ export async function init(): Promise<PluginSetting> {
 		} );
 		
 	} );
+	
+	// 初始化B站原神动态数据
+	bot.logger.info( "[hot-news]开始初始化B站原神动态数据..." )
+	const dynamic_list = await getBiliDynamicNew();
+	if ( dynamic_list ) {
+		const ids: string[] = dynamic_list.map( d => d.id_str );
+		await bot.redis.addSetMember( DB_KEY.genshin_dynamic_ids_key, ...ids );
+		bot.logger.info( "[hot-news]初始化B站原神动态数据完成." );
+	}
 	
 	const browser = await launchBrowser();
 	scheduleJob( "0 0/3 * * * *", async () => {
