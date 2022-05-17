@@ -68,7 +68,7 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 	}
 	
 	return new Promise( ( resolve, reject ) => {
-		axios.get( API[channel], { headers: NEWS_HEADERS } ).then( res => {
+		axios.get( API[channel], { headers: NEWS_HEADERS, timeout: 5000 } ).then( res => {
 			if ( res.status !== 200 ) {
 				bot.logger.error( `获取[${ channel }]热点新闻失败: ${ res.statusText }` )
 				reject( '获取热点新闻失败' )
@@ -146,6 +146,7 @@ export const getBiliDynamicNew: () => Promise<BiliDynamicCard[] | null> = async 
 				host_mid: 401742377,
 				timezone_offset: -480
 			},
+			timeout: 5000,
 			headers: BILIBILI_DYNAMIC_HEADERS
 		} ).then( r => {
 			const data = r.data;
@@ -175,7 +176,8 @@ export const getBiliLive: () => Promise<BiliLiveInfo> = async () => {
 			params: {
 				mid: 401742377,
 				jsonp: 'jsonp'
-			}
+			},
+			timeout: 5000
 		} ).then( r => {
 			if ( r.data.code !== 0 ) {
 				bot.logger.error( `获取B站原神个人信息失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
