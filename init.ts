@@ -5,11 +5,13 @@ import { AuthLevel } from "@modules/management/auth";
 import bot from "ROOT";
 import { DB_KEY } from "#hot-news/achieves/subscribe_news";
 import { Job, scheduleJob } from "node-schedule";
-import { BiliDynamicCard, getBiliDynamicNew, getBiliLive, getNews } from "#hot-news/util/api";
+import { getBiliDynamicNew, getBiliLive, getNews } from "#hot-news/util/api";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { randomInt } from "#genshin/utils/random";
-import puppeteer, { Page } from "puppeteer";
 import { segment } from "oicq";
+import { config } from "#genshin/init";
+import { Renderer } from "@modules/renderer";
+import puppeteer from "puppeteer";
 
 const subscribe_news: OrderConfig = {
 	type: "order",
@@ -35,6 +37,8 @@ const unsubscribe_news: OrderConfig = {
 	detail: "取消订阅的新闻。可用订阅源：新闻源(新浪、知乎、网易、头条、百度)、原神，默认取消新闻订阅"
 };
 
+export let renderer: Renderer;
+
 const notifyNews = async () => {
 	bot.redis.getSet( DB_KEY.ids ).then( subs => {
 		subs.forEach( sub => {
@@ -58,30 +62,40 @@ const notifyNews = async () => {
 	} )
 }
 
-async function normalDynamicHandle( page: Page, r: BiliDynamicCard, type: number, targetId: number ) {
-	await page.goto( `https://t.bilibili.com/${ r.id_str }`, { waitUntil: "networkidle2" } )
-	let card = await page.waitForSelector( ".card" );
-	let clip = await card?.boundingBox();
-	let bar = await page.waitForSelector( ".text-bar" )
-	let bar_bound = await bar?.boundingBox();
-	clip!.height = bar_bound!.y - clip!.y;
-	let image_base64 = await page.screenshot( {
-		type: "jpeg",
-		clip: { x: clip!.x, y: clip!.y, width: clip!.width, height: clip!.height },
-		encoding: "base64"
-	} )
-	const base64: string = `base64://${ image_base64 }`;
-	const cqCode: string = `[CQ:image,file=${ base64 }]`;
-	const msg = `B站原神发布新动态了!\n${ cqCode }`;
+async function normalDynamicHandle( id_str: string, type: number, targetId: number ) {
+	const res = await renderer.asForFunction( `https://t.bilibili.com/${ id_str }`, async ( page ) => {
+		// 把头部信息以及可能出现的未登录弹框删掉
+		await page.$eval( "#internationalHeader", element => element.remove() );
+		let card = await page.waitForSelector( ".card" );
+		let clip = await card?.boundingBox();
+		let bar = await page.waitForSelector( ".text-bar" )
+		let bar_bound = await bar?.boundingBox();
+		clip!.height = bar_bound!.y - clip!.y;
+		return await page.screenshot( {
+			type: "jpeg",
+			clip: { x: clip!.x, y: clip!.y, width: clip!.width, height: clip!.height },
+			encoding: "base64"
+		} );
+	}, {
+		width: 2000,
+		height: 1000
+	} );
+	let msg = `B站原神发布新动态了!`;
+	if ( res.code === 'ok' ) {
+		const base64: string = `base64://${ res.data }`;
+		const cqCode: string = `[CQ:image,file=${ base64 }]`;
+		msg += "\n" + cqCode;
+	} else {
+		msg += "(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]"
+	}
 	if ( type === MessageType.Private ) {
 		await bot.client.sendPrivateMsg( targetId, msg )
 	} else {
 		await bot.client.sendGroupMsg( targetId, msg );
 	}
-	await page.close()
 }
 
-const notifyGenshin = async ( browser: puppeteer.Browser ) => {
+const notifyGenshin = async () => {
 	bot.redis.getSet( DB_KEY.genshin_ids ).then( subs => {
 		subs.forEach( async sub => {
 			const {
@@ -91,8 +105,7 @@ const notifyGenshin = async ( browser: puppeteer.Browser ) => {
 			// B站动态信息推送
 			const r = await getBiliDynamicNew();
 			let liveDynamic: boolean = false;
-			if ( r ) {
-				const page = await browser.newPage();
+			if ( r && r.length > 0 ) {
 				const ids = await bot.redis.getSet( DB_KEY.genshin_dynamic_ids_key );
 				for ( let card of r ) {
 					if ( ids.includes( card.id_str ) ) {
@@ -100,27 +113,51 @@ const notifyGenshin = async ( browser: puppeteer.Browser ) => {
 						continue;
 					}
 					
-					bot.logger.info( `[hot-news]获取到B站原神新动态[${ card.modules.module_dynamic.desc?.text }]` );
 					// 专栏类型
 					if ( card.type === 'DYNAMIC_TYPE_ARTICLE' ) {
-						await page.goto( `https://www.bilibili.com/read/cv${ card.basic.rid_str }`, { waitUntil: "networkidle2" } )
-						const el = await page.waitForSelector( ".article-container__content" );
-						const res = await el?.screenshot( { type: "jpeg", encoding: "base64" } );
-						const base64: string = `base64://${ res }`;
-						const cqCode: string = `[CQ:image,file=${ base64 }]`;
-						const msg = `B站原神发布新动态了!\n${ cqCode }`;
+						bot.logger.info( `[hot-news]获取到B站原神新动态[${ card.modules.module_dynamic.major.article?.desc }]` );
+						const res = await renderer.asForFunction( `https://www.bilibili.com/read/cv${ card.basic.rid_str }`
+							, async ( page ) => {
+								await page.$eval( "#internationalHeader", element => element.remove() );
+								const option: puppeteer.ScreenshotOptions = { type: 'jpeg', encoding: "base64" };
+								const element = await page.$( ".article-container__content" );
+								if ( element ) {
+									return await element.screenshot( option );
+								}
+								throw '渲染图片出错，未找到DOM节点';
+							}, {
+								width: 2000,
+								height: 1000
+							} );
+						let msg = `B站原神发布新动态了!\n ${ card.modules.module_dynamic.major.article?.desc }`;
 						if ( type === MessageType.Private ) {
 							await bot.client.sendPrivateMsg( targetId, msg )
 						} else {
 							await bot.client.sendGroupMsg( targetId, msg );
 						}
-						await page.close()
+						
+						// 图可能比较大，单独再发送一张图
+						let imgMsg: string;
+						if ( res.code === 'ok' ) {
+							imgMsg = res.data;
+							const base64: string = `base64://${ res.data }`;
+							imgMsg = `[CQ:image,file=${ base64 }]`;
+						} else {
+							imgMsg = '(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]';
+						}
+						if ( type === MessageType.Private ) {
+							await bot.client.sendPrivateMsg( targetId, imgMsg )
+						} else {
+							await bot.client.sendGroupMsg( targetId, imgMsg );
+						}
 					} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
 						// 直播动态处理完后直接返回，不需要后续再查询
-						await normalDynamicHandle( page, card, type, targetId );
+						bot.logger.info( `[hot-news]获取到B站原神新动态[${ card.modules.module_dynamic.desc?.text }]` );
+						await normalDynamicHandle( card.id_str, type, targetId );
 						liveDynamic = true;
 					} else {
-						await normalDynamicHandle( page, card, type, targetId );
+						bot.logger.info( `[hot-news]获取到B站原神新动态[${ card.modules.module_dynamic.desc?.text }]` );
+						await normalDynamicHandle( card.id_str, type, targetId );
 					}
 					
 					// 把新的动态ID加入本地数据库
@@ -148,31 +185,6 @@ const notifyGenshin = async ( browser: puppeteer.Browser ) => {
 	} )
 }
 
-const launchBrowser: () => Promise<puppeteer.Browser> = async () => {
-	return new Promise( async ( resolve, reject ) => {
-		try {
-			const browser = await puppeteer.launch( {
-				headless: true,
-				args: [
-					"--no-sandbox",
-					"--disable-setuid-sandbox",
-					"--disable-dev-shm-usage"
-				],
-				defaultViewport: {
-					width: 2000,
-					height: 1000
-				}
-			} );
-			bot.logger.info( "[hot-news]浏览器启动成功" );
-			resolve( browser );
-		} catch ( error ) {
-			const err: string = `[hot-news]浏览器启动失败: ${ ( <Error>error ).stack }`;
-			await bot.message.sendMaster( err );
-			bot.logger.error( err );
-		}
-	} );
-}
-
 // 不可 default 导出，函数名固定
 export async function init(): Promise<PluginSetting> {
 	scheduleJob( "0 30 8 * * *", async () => {
@@ -195,9 +207,10 @@ export async function init(): Promise<PluginSetting> {
 		bot.logger.info( "[hot-news]初始化B站原神动态数据完成." );
 	}
 	
-	const browser = await launchBrowser();
+	/* 实例化渲染器 */
+	renderer = bot.renderer.register( "hot-news", "/", config.serverPort, "" );
 	scheduleJob( "0 0/3 * * * *", async () => {
-		await notifyGenshin( browser );
+		await notifyGenshin();
 	} )
 	
 	return {

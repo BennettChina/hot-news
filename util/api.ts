@@ -1,6 +1,7 @@
 import axios from "axios";
 import bot from 'ROOT';
 import { formatDate } from "#hot-news/util/tools";
+import { DB_KEY } from "#hot-news/achieves/subscribe_news";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -113,7 +114,7 @@ export interface BiliDynamicCard {
 			desc: {
 				text: string
 			} | null,
-			major: {}
+			major: any
 		},
 		module_tag: {
 			text: string
@@ -139,6 +140,11 @@ export interface BiliLiveInfo {
  * 获取B站空间动态列表
  */
 export const getBiliDynamicNew: () => Promise<BiliDynamicCard[] | null> = async () => {
+	const dynamic = await bot.redis.getString( DB_KEY.genshin_dynamic_key );
+	if ( dynamic ) {
+		return Promise.resolve( JSON.parse( dynamic ) );
+	}
+	
 	return new Promise( ( resolve, reject ) => {
 		axios.get( API.biliDynamic, {
 			params: {
@@ -163,14 +169,21 @@ export const getBiliDynamicNew: () => Promise<BiliDynamicCard[] | null> = async 
 				&& ( !c.modules.module_dynamic.desc || c.modules.module_dynamic.desc.text.search( reg ) === -1 ) );
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
+				bot.redis.setString( DB_KEY.genshin_dynamic_key, JSON.stringify( filter_items ), 3 * 60 );
 			} else {
 				resolve( null );
+				bot.redis.setString( DB_KEY.genshin_dynamic_key, "[]", 3 * 60 );
 			}
 		} ).catch( reason => reject( reason ) )
 	} );
 }
 
 export const getBiliLive: () => Promise<BiliLiveInfo> = async () => {
+	const live_info = await bot.redis.getString( DB_KEY.genshin_live_info_key );
+	if ( live_info ) {
+		return Promise.resolve( JSON.parse( live_info ) );
+	}
+	
 	return new Promise( ( resolve, reject ) => {
 		axios.get( API.biliInfo, {
 			params: {
@@ -186,7 +199,9 @@ export const getBiliLive: () => Promise<BiliLiveInfo> = async () => {
 			}
 			
 			const { name, live_room } = r.data.data;
-			resolve( { name, liveRoom: live_room } );
+			const info = { name, liveRoom: live_room };
+			resolve( info );
+			bot.redis.setString( DB_KEY.genshin_live_info_key, JSON.stringify( info ), 3 * 60 );
 		} ).catch( reason => reject( reason ) )
 	} );
 }
