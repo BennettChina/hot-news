@@ -1,3 +1,4 @@
+
 本项目为 https://github.com/SilveryStar/Adachi-BOT 衍生插件，用于订阅热点新闻，使用的是 [AnyKnew](https://www.anyknew.com/#/) 网站的API。
 
 ## 安装
@@ -63,3 +64,44 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 ## 感谢
 
 - 感谢 [AnyKnew](https://www.anyknew.com/#/) 站长提供的API
+
+
+## 问题汇总
+
+- 字体缺少导致的B站动态截图中有方块，解决方案就是安装中文字体。
+
+<details>
+<summary>Linux 使用 pm2 启动的方式</summary>
+这里仅给出 Centos 和 Ubuntu 的文泉译微软雅黑字体安装命令，其他系统可百度搜索下
+
+- Centos
+
+```shell
+yum makecache && yum -y install wqy-microhei-fonts
+```
+
+- Ubuntu
+
+```shell
+apt install -y --force-yes --no-install-recommends fonts-wqy-microhei
+```
+</details>
+
+<details>
+<summary>Docker 启动方式使用下面的 Dockerfile 文件</summary>
+
+```dockerfile
+FROM silverystar/centos-puppeteer-env
+
+ENV LANG en_US.utf8
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  \
+    && yum install -y git  \
+    && npm config set registry https://registry.npmmirror.com \
+    && yum makecache && yum -y install wqy-microhei-fonts
+
+COPY . /bot
+WORKDIR /bot
+RUN npm i puppeteer --unsafe-perm=true --allow-root
+CMD nohup sh -c "npm i && npm run docker-start"
+```
+</details>
