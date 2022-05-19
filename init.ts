@@ -8,10 +8,12 @@ import { Job, scheduleJob } from "node-schedule";
 import { getBiliDynamicNew, getBiliLive, getNews } from "#hot-news/util/api";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { randomInt } from "#genshin/utils/random";
+import * as sdk from "oicq";
 import { segment } from "oicq";
 import { config } from "#genshin/init";
 import { Renderer } from "@modules/renderer";
 import puppeteer from "puppeteer";
+import { BOT } from "@modules/bot";
 
 const subscribe_news: OrderConfig = {
 	type: "order",
@@ -185,6 +187,30 @@ const notifyGenshin = async () => {
 	} )
 }
 
+/* 若开启必须添加好友，则删除好友后清除订阅服务 */
+function decreaseFriend( { redis, config, logger }: BOT ) {
+	return async function ( friendDate: sdk.FriendDecreaseEventData ) {
+		if ( config.addFriend ) {
+			const targetId = friendDate.user_id;
+			let member: string = JSON.stringify( { targetId, type: MessageType.Private } )
+			// 处理原神B站动态订阅
+			const exist: boolean = await redis.existSetMember( DB_KEY.genshin_ids, member )
+			if ( exist ) {
+				await redis.delSetMember( DB_KEY.genshin_ids, member );
+				await logger.info( `--[hot-news]--已为[${ targetId }]已取消订阅原神动态` );
+			}
+			
+			// 处理新闻订阅
+			const existNotify: boolean = await redis.existSetMember( DB_KEY.ids, member );
+			if ( existNotify ) {
+				await redis.delSetMember( DB_KEY.ids, member );
+				await redis.delHash( DB_KEY.channel, `${ targetId }` );
+				await logger.info( `--[hot-news]--已为[${ targetId }]已取消订阅新闻服务` );
+			}
+		}
+	}
+}
+
 // 不可 default 导出，函数名固定
 export async function init(): Promise<PluginSetting> {
 	scheduleJob( "0 30 8 * * *", async () => {
@@ -212,6 +238,10 @@ export async function init(): Promise<PluginSetting> {
 	scheduleJob( "0 0/3 * * * *", async () => {
 		await notifyGenshin();
 	} )
+	
+	// 监听好友删除事件
+	bot.client.on( "notice.friend.decrease", decreaseFriend( bot ) );
+	bot.logger.info( "[hot-news]好友删除事件监听已启动成功" )
 	
 	return {
 		pluginName: "hot-news",
