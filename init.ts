@@ -88,6 +88,7 @@ async function normalDynamicHandle( id_str: string, type: number, targetId: numb
 		const cqCode: string = `[CQ:image,file=${ base64 }]`;
 		msg += "\n" + cqCode;
 	} else {
+		bot.logger.error( res.error );
 		msg += "(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]"
 	}
 	if ( type === MessageType.Private ) {
@@ -145,6 +146,7 @@ const notifyGenshin = async () => {
 							const base64: string = `base64://${ res.data }`;
 							imgMsg = `[CQ:image,file=${ base64 }]`;
 						} else {
+							bot.logger.error( res.error );
 							imgMsg = '(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]';
 						}
 						if ( type === MessageType.Private ) {
