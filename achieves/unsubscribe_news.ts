@@ -1,5 +1,5 @@
 import { InputParameter } from "@modules/command";
-import { CHANNEL_NAME, DB_KEY } from "#hot-news/achieves/subscribe_news";
+import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getChatInfo } from "#hot-news/util/tools";
 import { MessageType } from "@modules/message";
 import { AuthLevel } from "@modules/management/auth";

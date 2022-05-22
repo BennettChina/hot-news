@@ -3,25 +3,7 @@ import { MessageType } from "@modules/message";
 import { getNews } from "#hot-news/util/api";
 import { getChatInfo } from "#hot-news/util/tools";
 import { AuthLevel } from "@modules/management/auth";
-
-export const CHANNEL_NAME = {
-	toutiao: '头条',
-	sina: '新浪',
-	wangyi: '网易',
-	zhihu: '知乎',
-	baidu: '百度',
-	genshin: '原神'
-}
-
-export const DB_KEY = {
-	ids: "hot_news.subscribe_ids",
-	channel: "hot_news.subscribe_channel",
-	genshin_ids: 'hot_news.sub_genshin_ids',
-	genshin_live_notified: 'hot_news.genshin_live_notified',
-	genshin_dynamic_ids_key: 'hot_news.genshin_dynamic_ids',
-	genshin_dynamic_key: 'hot_news.genshin_dynamic',
-	genshin_live_info_key: 'hot_news.genshin_live_info',
-}
+import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 
 export const getChannelKey: ( channel: string ) => ( string | null ) = ( channel ) => {
 	for ( let k in CHANNEL_NAME ) {

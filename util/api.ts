@@ -1,7 +1,8 @@
 import axios from "axios";
 import bot from 'ROOT';
 import { formatDate } from "#hot-news/util/tools";
-import { DB_KEY } from "#hot-news/achieves/subscribe_news";
+import { DB_KEY } from "#hot-news/util/constants";
+import { BiliDynamicCard, BiliLiveInfo, News } from "#hot-news/types/type";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -11,36 +12,6 @@ const API = {
 	toutiao: 'https://www.anyknew.com/api/v1/sites/toutiao',
 	biliDynamic: "https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space",
 	biliInfo: 'https://api.bilibili.com/x/space/acc/info'
-}
-
-interface News_Attrs {
-	cn: string,
-	logo: string,
-	url: string,
-	iter: number
-}
-
-interface News_Item {
-	iid: number,
-	title: string,
-	more: string,
-	add_date: number,
-	new_tag: boolean
-}
-
-interface News_Sub {
-	items: News_Item[],
-	attrs: {
-		cn: string,
-		display: number
-	}
-}
-
-interface News {
-	site: {
-		attrs: News_Attrs,
-		subs: News_Sub[]
-	}
 }
 
 const NEWS_HEADERS = {
@@ -99,41 +70,6 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 			reject( err )
 		} )
 	} );
-}
-
-export interface BiliDynamicCard {
-	basic: {
-		rid_str: string
-	},
-	id_str: string,
-	modules: {
-		module_author: {
-			pub_ts: number
-		},
-		module_dynamic: {
-			desc: {
-				text: string
-			} | null,
-			major: any
-		},
-		module_tag: {
-			text: string
-		}
-	},
-	type: string,
-	visible: boolean
-	
-}
-
-export interface BiliLiveInfo {
-	liveRoom: {
-		liveStatus: number,
-		roomStatus: number,
-		title: string,
-		url: string,
-		cover: string
-	},
-	name: string
 }
 
 /**

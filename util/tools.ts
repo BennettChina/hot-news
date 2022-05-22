@@ -1,11 +1,12 @@
 import { isGroupMessage, isPrivateMessage, Message, MessageType } from "@modules/message";
+import { ChatInfo } from "#hot-news/types/type";
 
 export const formatDate: ( date: Date ) => string = ( date ) => {
 	const dateArr: number[] = [ date.getFullYear(), date.getMonth() + 1, date.getDate() ];
 	return dateArr.join( '-' );
 }
 
-export const getChatInfo: ( messageData: Message ) => ( { targetId: number; user_id: number; type: MessageType } ) = ( messageData ) => {
+export const getChatInfo: ( messageData: Message ) => ChatInfo = ( messageData ) => {
 	// 获取当前对话的群号或者QQ号
 	if ( isGroupMessage( messageData ) ) {
 		return {
