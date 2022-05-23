@@ -67,19 +67,19 @@ export class ScheduleNews {
 	
 	private async notifyGenshin(): Promise<void> {
 		const set = await this.bot.redis.getSet( DB_KEY.genshin_ids );
+		const ids = await this.bot.redis.getSet( DB_KEY.genshin_dynamic_ids_key );
 		for ( const sub of set ) {
 			const chatInfo: ChatInfo = JSON.parse( sub );
 			// B站动态信息推送
 			const r = await getBiliDynamicNew();
 			let liveDynamic: boolean = false;
-			const notification_status = await this.bot.redis.getString( DB_KEY.genshin_live_notified );
+			const notification_status = await this.bot.redis.getString( `${ DB_KEY.genshin_live_notified }.${ chatInfo.targetId }` );
 			const limit = await this.bot.redis.getString( `${ DB_KEY.limit_genshin_dynamic_time_key }.${ chatInfo.targetId }` );
 			let limitMillisecond = 0;
 			if ( limit ) {
-				limitMillisecond = parseInt( limit ) * 60 * 60 * 1000
+				limitMillisecond = parseInt( limit ) * 60 * 60 * 1000;
 			}
 			if ( r && r.length > 0 ) {
-				const ids = await this.bot.redis.getSet( DB_KEY.genshin_dynamic_ids_key );
 				for ( let card of r ) {
 					if ( ids.includes( card.id_str ) ) {
 						this.bot.logger.debug( `[hot-news]历史动态[${ card.id_str }]，跳过推送!` );
@@ -105,6 +105,7 @@ export class ScheduleNews {
 						} else {
 							this.bot.logger.info( "[hot-news]直播开播消息已推送过了，该直播动态不再推送！" )
 						}
+						await this.bot.redis.setString( `${ DB_KEY.genshin_live_notified }.${ chatInfo.targetId }`, "1", 8 * 60 * 60 );
 						liveDynamic = true;
 					} else {
 						this.bot.logger.info( `[hot-news]获取到B站原神新动态[${ card.modules.module_dynamic.desc?.text }]` );
@@ -124,7 +125,7 @@ export class ScheduleNews {
 					const cqCode = segment.toCqcode( image );
 					let msg = `B站${ live.name }开播啦!\n标题：${ live.liveRoom.title }\n直播间：${ live.liveRoom.url }\n${ cqCode }`
 					await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
-					await this.bot.redis.setString( DB_KEY.genshin_live_notified, "1", 8 * 60 * 60 );
+					await this.bot.redis.setString( `${ DB_KEY.genshin_live_notified }.${ chatInfo.targetId }`, "1", 8 * 60 * 60 );
 				}
 			}
 		}
@@ -133,15 +134,23 @@ export class ScheduleNews {
 	private async articleHandle( card: BiliDynamicCard, { type, targetId }: ChatInfo ): Promise<void> {
 		const { article } = <BiliDynamicMajorArticle>card.modules.module_dynamic.major;
 		this.bot.logger.info( `[hot-news]获取到B站原神新动态[${ article.desc }]` );
-		const res = await renderer.asForFunction( `https:${ article.jump_url }`
-			, this.articleDynamicPageFunction, this.viewPort );
 		let msg = `B站原神发布新动态了!\n ${ article.desc }`;
 		await this.sendMsg( type, targetId, msg );
 		
+		// 检测是否图片消息是否已经缓存
+		let imgMsg: string = await this.bot.redis.getString( `${ DB_KEY.img_msg_key }.${ card.id_str }` );
+		if ( imgMsg ) {
+			this.bot.logger.info( `[hot-news]检测到动态[${ card.id_str }]渲染图的缓存，不再渲染新图，直接使用缓存内容.` )
+			await this.sendMsg( type, targetId, imgMsg );
+			return;
+		}
+		
 		// 图可能比较大，单独再发送一张图
-		let imgMsg: string;
+		const res = await renderer.asForFunction( `https:${ article.jump_url }`
+			, this.articleDynamicPageFunction, this.viewPort );
 		if ( res.code === 'ok' ) {
 			imgMsg = this.asCqCode( res.data );
+			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ card.id_str }`, imgMsg, 5 );
 		} else {
 			this.bot.logger.error( res.error );
 			imgMsg = '(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]';
@@ -158,11 +167,20 @@ export class ScheduleNews {
 	}
 	
 	private async normalDynamicHandle( id_str: string, { type, targetId }: ChatInfo ): Promise<void> {
+		// 检测是否图片消息是否已经缓存
+		let msg: string = await this.bot.redis.getString( `${ DB_KEY.img_msg_key }.${ id_str }` );
+		if ( msg ) {
+			this.bot.logger.info( `[hot-news]检测到动态[${ id_str }]渲染图的缓存，不再渲染新图，直接使用缓存内容.` )
+			await this.sendMsg( type, targetId, msg );
+			return;
+		}
+		
 		const res = await renderer.asForFunction( `https://t.bilibili.com/${ id_str }`, this.normalDynamicPageFunction, this.viewPort );
-		let msg = `B站原神发布新动态了!`;
+		msg = `B站原神发布新动态了!`;
 		if ( res.code === 'ok' ) {
 			const cqCode = this.asCqCode( res.data );
 			msg += "\n" + cqCode;
+			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ id_str }`, msg, 5 );
 		} else {
 			this.bot.logger.error( res.error );
 			msg += "(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]"
@@ -170,10 +188,9 @@ export class ScheduleNews {
 		await this.sendMsg( type, targetId, msg );
 	}
 	
-	private asCqCode( msg: string ) {
-		const base64: string = `base64://${ msg }`;
-		const cqCode: string = `[CQ:image,file=${ base64 }]`;
-		return cqCode;
+	private asCqCode( base64Str: string ): string {
+		const base64: string = `base64://${ base64Str }`;
+		return `[CQ:image,file=${ base64 }]`;
 	}
 	
 	private async normalDynamicPageFunction( page: puppeteer.Page ): Promise<Buffer | string | void> {

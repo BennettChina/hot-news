@@ -7,6 +7,7 @@ export const DB_KEY = {
 	genshin_dynamic_key: 'hot_news.genshin_dynamic',
 	genshin_live_info_key: 'hot_news.genshin_live_info',
 	limit_genshin_dynamic_time_key: "hot_news.limit_genshin_dynamic_time",
+	img_msg_key: 'hot_news.img_msg',
 }
 
 export const CHANNEL_NAME = {
