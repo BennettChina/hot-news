@@ -23,7 +23,7 @@ export class ScheduleNews {
 	}
 	
 	public createNewsSchedule(): void {
-		scheduleJob( "0 04 17 * * *", async () => {
+		scheduleJob( "0 30 8 * * *", async () => {
 			const sec: number = randomInt( 0, 180 );
 			const time = new Date().setSeconds( sec * 10 );
 			
