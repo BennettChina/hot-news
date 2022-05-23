@@ -202,7 +202,6 @@ export class ScheduleNews {
 		let bar_bound = await bar?.boundingBox();
 		clip!.height = bar_bound!.y - clip!.y;
 		return await page.screenshot( {
-			type: "jpeg",
 			clip: { x: clip!.x, y: clip!.y, width: clip!.width, height: clip!.height },
 			encoding: "base64"
 		} );
@@ -210,7 +209,7 @@ export class ScheduleNews {
 	
 	private async articleDynamicPageFunction( page: puppeteer.Page ): Promise<Buffer | string | void> {
 		await page.$eval( "#internationalHeader", element => element.remove() );
-		const option: puppeteer.ScreenshotOptions = { type: 'jpeg', encoding: "base64" };
+		const option: puppeteer.ScreenshotOptions = { encoding: "base64" };
 		const element = await page.$( ".article-container__content" );
 		if ( element ) {
 			return await element.screenshot( option );

@@ -57,13 +57,14 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 
 ## 更新日志
 
+- 2022/05/23 截图改为截默认的PNG图（经过缓存优化，不再频繁截图，性能应该不成问题，jpeg图还是太糊了）。
 - 2022/05/23 修复动态只会推送给单个用户或者群聊的问题；将动态截图缓存起来，不再每个用户再截图一次，减少截图次数。
 - 2022/05/23 修复热点新闻的定时任务时间错误问题。
 - 2022/05/22 重构代码，是代码更整洁方便阅读。增加 `#lgdn` 指令指定原神动态过时时间，发布时间过去该时间的动态将不再推送（常规情况不需要设置，服务器经常出现长时间满负载导致推送失败才需要考虑设置该值）。
 - 2022/05/20 修复渲染图片出错时异常栈信息未打印导致无法分析问题
 - 2022/05/17 （⚠️ 本次更新依赖于BOT项目的 `2.3.6` 版本，请确保你的BOT项目版本为 `2.3.6` 以上）
-  - api调用增加缓存
-  - 启动浏览器使用重构后的方式，其他插件使用同一个浏览器
+    + api调用增加缓存
+    + 启动浏览器使用重构后的方式，其他插件使用同一个浏览器
 - 2022/05/16 修复因为B站审核问题导致动态时间错误判断而无法推送的问题。
 - 2022/05/13 增加B站原神动态订阅
 - 2022/04/14 新闻推送时间优化为8:30~9点。
@@ -72,7 +73,6 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 ## 感谢
 
 - 感谢 [AnyKnew](https://www.anyknew.com/#/) 站长提供的API
-
 
 ## 问题汇总
 
@@ -93,6 +93,7 @@ yum makecache && yum -y install wqy-microhei-fonts
 ```shell
 apt install -y --force-yes --no-install-recommends fonts-wqy-microhei
 ```
+
 </details>
 
 <details>
@@ -112,4 +113,5 @@ WORKDIR /bot
 RUN npm i puppeteer --unsafe-perm=true --allow-root
 CMD nohup sh -c "npm i && npm run docker-start"
 ```
+
 </details>
