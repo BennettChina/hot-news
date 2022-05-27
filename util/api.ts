@@ -75,17 +75,20 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 /**
  * 获取B站空间动态列表
  */
-export const getBiliDynamicNew: () => Promise<BiliDynamicCard[] | null> = async () => {
-	const dynamic = await bot.redis.getString( DB_KEY.genshin_dynamic_key );
+export const getBiliDynamicNew: ( uid: number ) => Promise<BiliDynamicCard[] | null> = async ( uid ) => {
+	const dynamic = await bot.redis.getString( `${ DB_KEY.bili_dynamic_key }.${ uid }` );
 	if ( dynamic ) {
 		return Promise.resolve( JSON.parse( dynamic ) );
 	}
 	
-	return new Promise( ( resolve, reject ) => {
+	// 已经发布的动态ID
+	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
+	
+	return new Promise( ( resolve ) => {
 		axios.get( API.biliDynamic, {
 			params: {
 				offset: '',
-				host_mid: 401742377,
+				host_mid: uid,
 				timezone_offset: -480
 			},
 			timeout: 5000,
@@ -93,51 +96,56 @@ export const getBiliDynamicNew: () => Promise<BiliDynamicCard[] | null> = async 
 		} ).then( r => {
 			const data = r.data;
 			if ( data.code !== 0 ) {
-				bot.logger.error( `获取B站原神动态失败,code is [${ data.code }], reason: ${ data.message || data.msg }` );
-				reject( '获取B站原神动态失败' );
+				bot.logger.error( `获取B站[${ uid }]动态失败,code is [${ data.code }], reason: ${ data.message || data.msg }` );
+				resolve( null );
 				return;
 			}
 			
 			const { items }: { items: BiliDynamicCard[] } = data.data;
 			const reg = new RegExp( /恭喜.*中奖/ );
-			// 无法显示消息、开奖消息过滤掉
+			// 无法显示消息、开奖消息、历史消息过滤掉
 			let filter_items = items.filter( c => c.visible
-				&& ( !c.modules.module_dynamic.desc || c.modules.module_dynamic.desc.text.search( reg ) === -1 ) );
+				&& ( !c.modules.module_dynamic.desc || c.modules.module_dynamic.desc.text.search( reg ) === -1 )
+				&& !dynamicIdList.includes( c.id_str ) );
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
-				bot.redis.setString( DB_KEY.genshin_dynamic_key, JSON.stringify( filter_items ), 3 * 60 );
+				bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, JSON.stringify( filter_items ), 175 );
 			} else {
 				resolve( null );
-				bot.redis.setString( DB_KEY.genshin_dynamic_key, "[]", 3 * 60 );
+				bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, "[]", 175 );
 			}
-		} ).catch( reason => reject( reason ) )
+		} ).catch( reason => {
+			bot.logger.error( reason );
+			resolve( null );
+		} )
 	} );
 }
 
-export const getBiliLive: () => Promise<BiliLiveInfo> = async () => {
-	const live_info = await bot.redis.getString( DB_KEY.genshin_live_info_key );
+export const getBiliLive: ( uid: number ) => Promise<BiliLiveInfo> = async ( uid ) => {
+	const live_info = await bot.redis.getString( `${ DB_KEY.bili_live_info_key }.${ uid }` );
 	if ( live_info ) {
 		return Promise.resolve( JSON.parse( live_info ) );
 	}
 	
-	return new Promise( ( resolve, reject ) => {
+	return new Promise( ( resolve ) => {
 		axios.get( API.biliInfo, {
 			params: {
-				mid: 401742377,
+				mid: uid,
 				jsonp: 'jsonp'
 			},
 			timeout: 5000
 		} ).then( r => {
 			if ( r.data.code !== 0 ) {
-				bot.logger.error( `获取B站原神个人信息失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
-				reject( '获取B站原神个人信息失败' );
+				bot.logger.error( `获取B站[${ uid }]个人信息失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
 				return;
 			}
 			
 			const { name, live_room } = r.data.data;
 			const info = { name, liveRoom: live_room };
 			resolve( info );
-			bot.redis.setString( DB_KEY.genshin_live_info_key, JSON.stringify( info ), 3 * 60 );
-		} ).catch( reason => reject( reason ) )
+			bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), 175 );
+		} ).catch( reason => {
+			bot.logger.error( reason );
+		} )
 	} );
 }
