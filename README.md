@@ -63,6 +63,7 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 
 ## 更新日志
 
+- 2022/05/28 修复无法使用指令刷新配置、直播推送bug、初始化产生的缓存问题、取消B站订阅时会把该用户所有B站订阅都取消的问题；
 - 2022/05/28 B站的订阅改为多选，可通过订阅up的uid来实现订阅该up的动态和直播
     + 增加 `hot_news.yml` 配置文件，通过 `maxSubscribeNum` 设置每个用户B站订阅数量的最大值，默认为5个。
     + 限制B站动态推送的默认值设置为24小时。
