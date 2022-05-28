@@ -75,7 +75,7 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 /**
  * 获取B站空间动态列表
  */
-export const getBiliDynamicNew: ( uid: number ) => Promise<BiliDynamicCard[] | null> = async ( uid ) => {
+export const getBiliDynamicNew: ( uid: number, no_cache?: boolean ) => Promise<BiliDynamicCard[] | null> = async ( uid, no_cache = false ) => {
 	const dynamic = await bot.redis.getString( `${ DB_KEY.bili_dynamic_key }.${ uid }` );
 	if ( dynamic ) {
 		return Promise.resolve( JSON.parse( dynamic ) );
@@ -109,10 +109,14 @@ export const getBiliDynamicNew: ( uid: number ) => Promise<BiliDynamicCard[] | n
 				&& !dynamicIdList.includes( c.id_str ) );
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
-				bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, JSON.stringify( filter_items ), 175 );
+				if ( !no_cache ) {
+					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, JSON.stringify( filter_items ), 175 );
+				}
 			} else {
 				resolve( null );
-				bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, "[]", 175 );
+				if ( !no_cache ) {
+					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, "[]", 175 );
+				}
 			}
 		} ).catch( reason => {
 			bot.logger.error( reason );

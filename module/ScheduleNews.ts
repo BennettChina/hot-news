@@ -42,12 +42,12 @@ export class ScheduleNews {
 	
 	public async initBiliDynamic( uid: number ): Promise<void> {
 		this.bot.logger.info( `[hot-news]开始初始化B站[${ uid }]动态数据...` )
-		const dynamic_list = await getBiliDynamicNew( uid );
+		const dynamic_list = await getBiliDynamicNew( uid, true );
 		if ( dynamic_list && dynamic_list.length > 0 ) {
 			const ids: string[] = dynamic_list.map( d => d.id_str );
 			await this.bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, ...ids );
-			this.bot.logger.info( `[hot-news]初始化B站[${ uid }]动态数据完成.` );
 		}
+		this.bot.logger.info( `[hot-news]初始化B站[${ uid }]动态数据完成.` );
 	}
 	
 	public async initAllBiliDynamic(): Promise<void> {
@@ -121,7 +121,7 @@ export class ScheduleNews {
 					await this.articleHandle( card, chatInfo );
 				} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
 					// 直播动态处理完后直接返回，不需要后续再查询
-					this.bot.logger.info( `[hot-news]获取到B站${ name }新动态[${ card.modules.module_dynamic.desc?.text }]` );
+					this.bot.logger.info( `[hot-news]获取到B站${ name }新动态[${ card.modules.module_dynamic.desc?.text || "直播推送" }]` );
 					const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 					if ( !notification_status ) {
 						await this.normalDynamicHandle( card.id_str, name, chatInfo );
@@ -129,6 +129,9 @@ export class ScheduleNews {
 						this.bot.logger.info( `[hot-news]--[${ name }]的直播开播消息已推送过了，该直播动态不再推送！` )
 					}
 					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", 8 * 60 * 60 );
+				} else if ( card.type === "DYNAMIC_TYPE_AV" ) {
+					this.bot.logger.info( `[hot-news]获取到B站[${ name }]的新动态[${ card.modules.module_dynamic.desc?.text || "投稿视频" }]` );
+					await this.normalDynamicHandle( card.id_str, name, chatInfo );
 				} else {
 					this.bot.logger.info( `[hot-news]获取到B站[${ name }]的新动态[${ card.modules.module_dynamic.desc?.text }]` );
 					await this.normalDynamicHandle( card.id_str, name, chatInfo );

@@ -54,7 +54,12 @@ async function unsubscribeBili( targetId: number, member: string, uid: number, r
 		const uidList: number[] = JSON.parse( uidListStr );
 		const name = uid === 401742377 ? "原神" : `${ uid }`;
 		if ( uidList.includes( uid ) ) {
-			await redis.delHash( DB_KEY.notify_bili_ids_key, `${ targetId }` );
+			if ( uidList.length === 1 ) {
+				await redis.delHash( DB_KEY.notify_bili_ids_key, `${ targetId }` );
+			} else {
+				const filter = uidList.filter( i => i !== uid );
+				await redis.setHash( DB_KEY.notify_bili_ids_key, { [`${ targetId }`]: JSON.stringify( filter ) } );
+			}
 			await sendMessage( `[${ targetId }]已成功取消订阅过B站[${ name }]的动态和直播。` );
 			return;
 		}
