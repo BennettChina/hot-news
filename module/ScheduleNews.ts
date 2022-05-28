@@ -122,13 +122,13 @@ export class ScheduleNews {
 				} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
 					// 直播动态处理完后直接返回，不需要后续再查询
 					this.bot.logger.info( `[hot-news]获取到B站${ name }新动态[${ card.modules.module_dynamic.desc?.text }]` );
-					const notification_status = await getHashField( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }`, `${ uid }` );
+					const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 					if ( !notification_status ) {
 						await this.normalDynamicHandle( card.id_str, name, chatInfo );
 					} else {
 						this.bot.logger.info( `[hot-news]--[${ name }]的直播开播消息已推送过了，该直播动态不再推送！` )
 					}
-					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }`, { [`${ uid }`]: "1" }, 8 * 60 * 60 );
+					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", 8 * 60 * 60 );
 				} else {
 					this.bot.logger.info( `[hot-news]获取到B站[${ name }]的新动态[${ card.modules.module_dynamic.desc?.text }]` );
 					await this.normalDynamicHandle( card.id_str, name, chatInfo );
@@ -140,7 +140,7 @@ export class ScheduleNews {
 			
 			// B站直播推送
 			for ( let uid of uidList ) {
-				const notification_status = await getHashField( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }`, `${ uid }` );
+				const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 				if ( !notification_status ) {
 					const live = await getBiliLive( uid );
 					if ( live && live.liveRoom.liveStatus === 1 ) {
@@ -148,7 +148,7 @@ export class ScheduleNews {
 						const cqCode = segment.toCqcode( image );
 						let msg = `B站${ live.name }开播啦!\n标题：${ live.liveRoom.title }\n直播间：${ live.liveRoom.url }\n${ cqCode }`
 						await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
-						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }`, { [`${ uid }`]: "1" }, 8 * 60 * 60 );
+						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", 8 * 60 * 60 );
 					}
 				}
 			}
