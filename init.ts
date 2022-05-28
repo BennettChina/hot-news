@@ -135,6 +135,7 @@ function loadConfig( file: FileManagement ): NewsConfig {
 export async function init( bot: BOT ): Promise<PluginSetting> {
 	/* 加载 hot_news.yml 配置 */
 	config = loadConfig( bot.file );
+	bot.refresh.registerRefreshableFile( "hot_news", config );
 	
 	/* 清除旧数据 */
 	await clearDeprecatedData( bot );
