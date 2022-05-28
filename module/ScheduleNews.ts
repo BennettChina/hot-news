@@ -175,7 +175,7 @@ export class ScheduleNews {
 			, this.articleDynamicPageFunction, this.viewPort );
 		if ( res.code === 'ok' ) {
 			imgMsg = this.asCqCode( res.data );
-			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ card.id_str }`, imgMsg, 5 );
+			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ card.id_str }`, imgMsg, 60 );
 		} else {
 			this.bot.logger.error( res.error );
 			imgMsg = '(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]';
@@ -205,7 +205,7 @@ export class ScheduleNews {
 		if ( res.code === 'ok' ) {
 			const cqCode = this.asCqCode( res.data );
 			msg += "\n" + cqCode;
-			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ id_str }`, msg, 5 );
+			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ id_str }`, msg, 60 );
 		} else {
 			this.bot.logger.error( res.error );
 			msg += "(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]"
