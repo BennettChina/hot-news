@@ -145,6 +145,9 @@ export const getBiliLive: ( uid: number ) => Promise<BiliLiveInfo> = async ( uid
 			}
 			
 			const { name, live_room } = r.data.data;
+			if ( !live_room ) {
+				bot.logger.warn( `获取B站[${ uid }]个人信息的直播间信息失败, data is ${ r.data }` );
+			}
 			const info = { name, liveRoom: live_room };
 			resolve( info );
 			bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), 175 );

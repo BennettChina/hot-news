@@ -146,7 +146,7 @@ export class ScheduleNews {
 				const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 				if ( !notification_status ) {
 					const live = await getBiliLive( uid );
-					if ( live && live.liveRoom.liveStatus === 1 ) {
+					if ( live && live.liveRoom && live.liveRoom.liveStatus === 1 ) {
 						const image = segment.image( live.liveRoom.cover, true, 10000 );
 						const cqCode = segment.toCqcode( image );
 						let msg = `B站${ live.name }开播啦!\n标题：${ live.liveRoom.title }\n直播间：${ live.liveRoom.url }\n${ cqCode }`
