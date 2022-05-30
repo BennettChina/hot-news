@@ -86,11 +86,13 @@ const clearDeprecatedData = async ( { redis }: BOT ) => {
 	const subs: string[] = await redis.getSet( "hot_news.sub_genshin_ids" );
 	if ( subs.length > 0 ) {
 		await redis.addSetMember( DB_KEY.sub_bili_ids_key, ...subs );
-		for ( const sub in subs ) {
+		let obj: any = Object.create( null );
+		for ( let sub of subs ) {
 			// 把原有的订阅数据初始化进去
 			const chatInfo: ChatInfo = JSON.parse( sub );
-			await redis.setHash( DB_KEY.notify_bili_ids_key, { [`${ chatInfo.targetId }`]: JSON.stringify( [ 401742377 ] ) } );
+			obj[`${ chatInfo.targetId }`] = JSON.stringify( [ 401742377 ] );
 		}
+		await redis.setHash( DB_KEY.notify_bili_ids_key, obj );
 	}
 	await redis.deleteKey( "hot_news.sub_genshin_ids" );
 	await redis.deleteKey( "hot_news.genshin_dynamic_ids" );
