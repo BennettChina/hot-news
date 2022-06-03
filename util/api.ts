@@ -125,7 +125,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean ) => Promise<B
 	} );
 }
 
-export const getBiliLive: ( uid: number ) => Promise<BiliLiveInfo> = async ( uid ) => {
+export const getBiliLive: ( uid: number, no_cache?: boolean ) => Promise<BiliLiveInfo> = async ( uid, no_cache = false ) => {
 	const live_info = await bot.redis.getString( `${ DB_KEY.bili_live_info_key }.${ uid }` );
 	if ( live_info ) {
 		return Promise.resolve( JSON.parse( live_info ) );
@@ -150,7 +150,9 @@ export const getBiliLive: ( uid: number ) => Promise<BiliLiveInfo> = async ( uid
 			}
 			const info = { name, liveRoom: live_room };
 			resolve( info );
-			bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), 175 );
+			if ( !no_cache ) {
+				bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), 175 );
+			}
 		} ).catch( reason => {
 			bot.logger.error( reason );
 		} )

@@ -49,6 +49,18 @@ const limit_genshin_dynamic_notify: OrderConfig = {
 	detail: "限制推送原神的动态信息，如果这条动态已经过去了某某小时则视为用户已自行得知该消息，放弃推送该消息"
 };
 
+const my_subscribe_list: OrderConfig = {
+	type: "order",
+	cmdKey: "hot-news.my_subscribe_list",
+	desc: [ "我的新闻订阅列表", "" ],
+	headers: [ "mysl" ],
+	regexps: [ "" ],
+	scope: MessageScope.Both,
+	auth: AuthLevel.User,
+	main: "achieves/subscribe_list",
+	detail: "查看我订阅的新闻和UP主"
+};
+
 export let renderer: Renderer;
 export let config: NewsConfig;
 export let scheduleNews: ScheduleNews;
@@ -161,6 +173,6 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	
 	return {
 		pluginName: "hot-news",
-		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify ]
+		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify, my_subscribe_list ]
 	};
 }

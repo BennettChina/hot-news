@@ -35,7 +35,7 @@ async function biliHandler( targetId: number, sendMessage: ( content: Sendable, 
 	}
 	
 	if ( uidList.length >= config.maxSubscribeNum ) {
-		await sendMessage( `[${ targetId }]的可订阅UP主数量已达到上限，无法再订阅UP主，可通过取消其他UP主的订阅减少你的订阅数量。` )
+		await sendMessage( `[${ targetId }]的可订阅UP主数量已达到 BOT 持有者设置的上限，无法再订阅UP主，可通过取消其他UP主的订阅减少你的订阅数量。` )
 		return;
 	}
 	

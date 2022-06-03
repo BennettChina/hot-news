@@ -56,6 +56,7 @@ async function unsubscribeBili( targetId: number, member: string, uid: number, r
 		if ( uidList.includes( uid ) ) {
 			if ( uidList.length === 1 ) {
 				await redis.delHash( DB_KEY.notify_bili_ids_key, `${ targetId }` );
+				await redis.delSetMember( DB_KEY.sub_bili_ids_key, member );
 			} else {
 				const filter = uidList.filter( i => i !== uid );
 				await redis.setHash( DB_KEY.notify_bili_ids_key, { [`${ targetId }`]: JSON.stringify( filter ) } );
