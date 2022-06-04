@@ -146,7 +146,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean ) => Promise<BiliLiv
 			
 			const { name, live_room } = r.data.data;
 			if ( !live_room ) {
-				bot.logger.warn( `获取B站[${ uid }]个人信息的直播间信息失败, data is ${ r.data }` );
+				bot.logger.warn( `获取B站[${ uid }]个人信息的直播间信息失败, data is ${ JSON.stringify( r.data ) }` );
 			}
 			const info = { name, liveRoom: live_room };
 			resolve( info );
