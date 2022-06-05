@@ -175,7 +175,7 @@ export interface BiliLiveInfo {
 		title: string;
 		url: string;
 		cover: string;
-	};
+	} | null;
 	name: string;
 }
 
