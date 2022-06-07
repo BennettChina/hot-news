@@ -35,9 +35,9 @@ export async function main( { sendMessage, messageData, auth, redis }: InputPara
 	const uidList: number[] = JSON.parse( uidListStr );
 	for ( let uid of uidList ) {
 		const info = await getBiliLive( uid, true );
-		upNames.push( info.name );
+		upNames.push( `\n\t- ${ uid }(${ info.name })` );
 	}
 	
-	let msg: string = `[${ targetId }]订阅了:\n新闻: ${ existNews ? `[${ CHANNEL_NAME[channel] }]` : "未订阅新闻" }\nB站UP: ${ existBili ? `[${ upNames }]\n您还可以订阅${ config.maxSubscribeNum - upNames.length }位UP主.` : "未订阅B站UP" }`;
+	let msg: string = `[${ targetId }]订阅了:\n新闻: ${ existNews ? `[${ CHANNEL_NAME[channel] }]` : "未订阅新闻" }\nB站UP: ${ existBili ? `${ upNames.join(" ") }\n您还可以订阅${ config.maxSubscribeNum - upNames.length }位UP主.` : "未订阅B站UP" }`;
 	await sendMessage( msg );
 }
