@@ -1,9 +1,8 @@
-import { PluginSetting } from "@modules/plugin";
+import { PluginSetting, PluginSubSetting, SubInfo } from "@modules/plugin";
 import { OrderConfig } from "@modules/command";
 import { MessageScope, MessageType } from "@modules/message";
 import { AuthLevel } from "@modules/management/auth";
 import { DB_KEY } from "#hot-news/util/constants";
-import * as sdk from "oicq";
 import { config as genshinConfig } from "#genshin/init";
 import { Renderer } from "@modules/renderer";
 import { BOT } from "@modules/bot";
@@ -11,6 +10,7 @@ import { ScheduleNews } from "#hot-news/module/ScheduleNews";
 import NewsConfig from "#hot-news/module/NewsConfig";
 import FileManagement from "@modules/file";
 import { ChatInfo } from "#hot-news/types/type";
+import { MemberDecreaseEventData } from "oicq";
 
 const subscribe_news: OrderConfig = {
 	type: "order",
@@ -65,29 +65,30 @@ export let renderer: Renderer;
 export let config: NewsConfig;
 export let scheduleNews: ScheduleNews;
 
+async function clearSubscribe( targetId: number, messageType: MessageType, { redis, logger }: BOT ) {
+	let member: string = JSON.stringify( { targetId, type: messageType } )
+	// 处理原神B站动态订阅
+	const exist: boolean = await redis.existSetMember( DB_KEY.sub_bili_ids_key, member )
+	if ( exist ) {
+		await redis.delSetMember( DB_KEY.sub_bili_ids_key, member );
+		await redis.delHash( DB_KEY.notify_bili_ids_key, `${ targetId }` );
+		await redis.deleteKey( `${ DB_KEY.limit_bili_dynamic_time_key }.${ targetId }` );
+		await logger.info( `--[hot-news]--已为[${ targetId }]取消订阅BiliBili动态` );
+	}
+	
+	// 处理新闻订阅
+	const existNotify: boolean = await redis.existSetMember( DB_KEY.ids, member );
+	if ( existNotify ) {
+		await redis.delSetMember( DB_KEY.ids, member );
+		await redis.delHash( DB_KEY.channel, `${ targetId }` );
+		await logger.info( `--[hot-news]--已为[${ targetId }]已取消订阅新闻服务` );
+	}
+}
+
 /* 若开启必须添加好友，则删除好友后清除订阅服务 */
-function decreaseFriend( { redis, config, logger }: BOT ) {
-	return async function ( friendDate: sdk.FriendDecreaseEventData ) {
-		if ( config.addFriend ) {
-			const targetId = friendDate.user_id;
-			let member: string = JSON.stringify( { targetId, type: MessageType.Private } )
-			// 处理原神B站动态订阅
-			const exist: boolean = await redis.existSetMember( DB_KEY.sub_bili_ids_key, member )
-			if ( exist ) {
-				await redis.delSetMember( DB_KEY.sub_bili_ids_key, member );
-				await redis.delHash( DB_KEY.notify_bili_ids_key, `${ targetId }` )
-				await redis.deleteKey( `${ DB_KEY.limit_bili_dynamic_time_key }.${ targetId }` );
-				await logger.info( `--[hot-news]--已为[${ targetId }]取消订阅BiliBili动态` );
-			}
-			
-			// 处理新闻订阅
-			const existNotify: boolean = await redis.existSetMember( DB_KEY.ids, member );
-			if ( existNotify ) {
-				await redis.delSetMember( DB_KEY.ids, member );
-				await redis.delHash( DB_KEY.channel, `${ targetId }` );
-				await logger.info( `--[hot-news]--已为[${ targetId }]已取消订阅新闻服务` );
-			}
-		}
+async function decreaseFriend( userId: number, bot: BOT ): Promise<void> {
+	if ( bot.config.addFriend ) {
+		await clearSubscribe( userId, MessageType.Private, bot );
 	}
 }
 
@@ -145,6 +146,50 @@ function loadConfig( file: FileManagement ): NewsConfig {
 	return new NewsConfig( config );
 }
 
+export async function newsSubs( { redis }: BOT ): Promise<SubInfo[]> {
+	const subNewsIds: string[] = await redis.getSet( DB_KEY.ids );
+	const newsSubUsers: number[] = subNewsIds.map( value => {
+		const { type, targetId }: ChatInfo = JSON.parse( value );
+		if ( type === MessageType.Private ) {
+			return targetId;
+		}
+		return -1;
+	} ).filter( value => value !== -1 );
+	
+	const subBiliIds: string[] = await redis.getSet( DB_KEY.sub_bili_ids_key );
+	const biliSubUsers: number[] = subBiliIds.map( value => {
+		const { type, targetId }: ChatInfo = JSON.parse( value );
+		if ( type === MessageType.Private ) {
+			return targetId;
+		}
+		return -1;
+	} ).filter( value => value !== -1 );
+	
+	return [ {
+		name: "新闻订阅",
+		users: newsSubUsers
+	}, {
+		name: "B站订阅",
+		users: biliSubUsers
+	} ]
+}
+
+export async function subInfo(): Promise<PluginSubSetting> {
+	return {
+		subs: newsSubs,
+		reSub: decreaseFriend
+	}
+}
+
+function decreaseGroup( bot: BOT ) {
+	return async function ( memberData: MemberDecreaseEventData ) {
+		// 如果退出群聊的是 BOT 那么就把该群聊的新闻订阅全部取消
+		if ( memberData.user_id === bot.config.number ) {
+			await clearSubscribe( memberData.user_id, MessageType.Group, bot );
+		}
+	}
+}
+
 // 不可 default 导出，函数名固定
 export async function init( bot: BOT ): Promise<PluginSetting> {
 	/* 加载 hot_news.yml 配置 */
@@ -167,9 +212,9 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	/* 创建原神动态定时任务 */
 	scheduleNews.createBiliSchedule();
 	
-	// 监听好友删除事件
-	bot.client.on( "notice.friend.decrease", decreaseFriend( bot ) );
-	bot.logger.info( "[hot-news]好友删除事件监听已启动成功" )
+	// 监听群聊退出事件
+	bot.client.on( "notice.group.decrease", decreaseGroup( bot ) );
+	bot.logger.info( "[hot-news]群聊退出事件监听已启动成功" )
 	
 	return {
 		pluginName: "hot-news",
