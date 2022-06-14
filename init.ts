@@ -199,7 +199,7 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	/* 清除旧数据 */
 	await clearDeprecatedData( bot );
 	
-	scheduleNews = new ScheduleNews( bot );
+	scheduleNews = new ScheduleNews( bot, config );
 	/* 创建每日新闻定时任务 */
 	scheduleNews.createNewsSchedule();
 	

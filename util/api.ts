@@ -75,7 +75,7 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 /**
  * 获取B站空间动态列表
  */
-export const getBiliDynamicNew: ( uid: number, no_cache?: boolean ) => Promise<BiliDynamicCard[] | null> = async ( uid, no_cache = false ) => {
+export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliDynamicCard[] | null> = async ( uid, no_cache = false, cache_time = 60 ) => {
 	const dynamic = await bot.redis.getString( `${ DB_KEY.bili_dynamic_key }.${ uid }` );
 	if ( dynamic ) {
 		return Promise.resolve( JSON.parse( dynamic ) );
@@ -110,12 +110,12 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean ) => Promise<B
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
 				if ( !no_cache ) {
-					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, JSON.stringify( filter_items ), 175 );
+					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, JSON.stringify( filter_items ), cache_time );
 				}
 			} else {
 				resolve( null );
 				if ( !no_cache ) {
-					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, "[]", 175 );
+					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, "[]", cache_time );
 				}
 			}
 		} ).catch( reason => {
@@ -125,7 +125,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean ) => Promise<B
 	} );
 }
 
-export const getBiliLive: ( uid: number, no_cache?: boolean ) => Promise<BiliLiveInfo> = async ( uid, no_cache = false ) => {
+export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliLiveInfo> = async ( uid, no_cache = false, cache_time = 60 ) => {
 	const live_info = await bot.redis.getString( `${ DB_KEY.bili_live_info_key }.${ uid }` );
 	if ( live_info ) {
 		return Promise.resolve( JSON.parse( live_info ) );
@@ -148,7 +148,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean ) => Promise<BiliLiv
 			const info = { name, liveRoom: live_room };
 			resolve( info );
 			if ( !no_cache ) {
-				bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), 175 );
+				bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), cache_time );
 			}
 		} ).catch( reason => {
 			bot.logger.error( reason );

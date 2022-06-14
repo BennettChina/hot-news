@@ -66,8 +66,30 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 权限: 用户 (User)
 ```
 
+## 插件配置
+
+`cron` 表达式不会用的可在 [Cron表达式生成器](https://www.bejson.com/othertools/cron/) 里生成
+
+```yaml
+# 用户的最大订阅数量
+maxSubscribeNum: 5
+# B站动态查询定时任务规则(cron表达式)
+biliDynamicScheduleRule: 0 0/3 * * * *
+# B站直播查询定时任务规则(cron表达式)
+biliLiveScheduleRule: 0 0/3 * * * *
+# B站动态API信息缓存时间（秒），该时间必须小于动态的轮询间隔时间
+biliDynamicApiCacheTime: 175
+# B站直播API信息缓存时间（秒），该时间必须小于动态的轮询间隔时间
+biliLiveApiCacheTime: 175
+# B站动态截图缓存时间（秒），该时间必须小于动态的轮询间隔时间
+biliScreenshotCacheTime: 60
+# B站直播状态缓存时间（小时），在此时间内不会再次推送该直播间
+biliLiveCacheTime: 8
+```
+
 ## 更新日志
 
+- 2022/06/14 插件B站订阅查询任务配置化，可自行配置定时任务的执行规则。
 - 2022/06/12 插件的订阅管理支持控制台管理（依赖 `BOT` 的 `2.4.1` 版本 ）
 - 2022/06/07 优化 `#mysl` 指令，返回的 B 站订阅 UP 列表加入该 UP 的 uid 。
 - 2022/06/03 增加 `#mysl` 指令查看用户订阅的信息。
