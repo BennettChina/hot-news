@@ -140,7 +140,7 @@ export class ScheduleNews {
 					} else {
 						this.bot.logger.info( `[hot-news]--[${ name }]的直播开播消息已推送过了，该直播动态不再推送！` )
 					}
-					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", this.config.biliLiveCacheTime );
+					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", this.config.biliLiveCacheTime * 60 * 60 );
 				} else if ( card.type === "DYNAMIC_TYPE_AV" ) {
 					this.bot.logger.info( `[hot-news]获取到B站[${ name }]的新动态[${ card.modules.module_dynamic.desc?.text || "投稿视频" }]` );
 					await this.normalDynamicHandle( card.id_str, name, chatInfo );
@@ -170,11 +170,12 @@ export class ScheduleNews {
 				if ( !notification_status ) {
 					const live = await getBiliLive( uid, false, this.config.biliLiveApiCacheTime );
 					if ( live && live.liveRoom && live.liveRoom.liveStatus === 1 ) {
-						const image = segment.image( live.liveRoom.cover, true, this.config.biliLiveCacheTime );
+						const cacheTime = this.config.biliLiveCacheTime * 60 * 60;
+						const image = segment.image( live.liveRoom.cover, true, cacheTime );
 						const cqCode = segment.toCqcode( image );
 						let msg = `B站${ live.name }开播啦!\n标题：${ live.liveRoom.title }\n直播间：${ live.liveRoom.url }\n${ cqCode }`
 						await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
-						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", this.config.biliLiveCacheTime );
+						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", cacheTime );
 					}
 				}
 			}
