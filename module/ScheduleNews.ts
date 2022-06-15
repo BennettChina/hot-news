@@ -55,7 +55,7 @@ export class ScheduleNews {
 	public async initBiliDynamic( uid: number ): Promise<void> {
 		this.bot.logger.info( `[hot-news]开始初始化B站[${ uid }]动态数据...` )
 		const dynamic_list = await getBiliDynamicNew( uid, true );
-		if ( dynamic_list && dynamic_list.length > 0 ) {
+		if ( dynamic_list.length > 0 ) {
 			const ids: string[] = dynamic_list.map( d => d.id_str );
 			await this.bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, ...ids );
 		}
@@ -106,7 +106,7 @@ export class ScheduleNews {
 			let cards: BiliDynamicCard[] = [];
 			for ( let uid of uidList ) {
 				const r = await getBiliDynamicNew( uid, false, this.config.biliDynamicApiCacheTime );
-				if ( r && r.length > 0 ) {
+				if ( r.length > 0 ) {
 					cards.push( ...r );
 				}
 			}

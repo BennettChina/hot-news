@@ -75,7 +75,7 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 /**
  * 获取B站空间动态列表
  */
-export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliDynamicCard[] | null> = async ( uid, no_cache = false, cache_time = 60 ) => {
+export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliDynamicCard[]> = async ( uid, no_cache = false, cache_time = 60 ) => {
 	const dynamic = await bot.redis.getString( `${ DB_KEY.bili_dynamic_key }.${ uid }` );
 	if ( dynamic ) {
 		return Promise.resolve( JSON.parse( dynamic ) );
@@ -97,30 +97,30 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 			const data = r.data;
 			if ( data.code !== 0 ) {
 				bot.logger.error( `获取B站[${ uid }]动态失败,code is [${ data.code }], reason: ${ data.message || data.msg }` );
-				resolve( null );
+				resolve( [] );
 				return;
 			}
 			
 			const { items }: { items: BiliDynamicCard[] } = data.data;
 			const reg = new RegExp( /恭喜.*中奖/ );
 			// 无法显示消息、开奖消息、历史消息过滤掉
-			let filter_items = items.filter( c => c.visible
-				&& ( !c.modules.module_dynamic.desc || c.modules.module_dynamic.desc.text.search( reg ) === -1 )
-				&& !dynamicIdList.includes( c.id_str ) );
+			let filter_items = items.filter( c => !dynamicIdList.includes( c.id_str )
+				&& c.visible
+				&& !reg.test( c.modules.module_dynamic.desc?.text || "" ) );
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
 				if ( !no_cache ) {
 					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, JSON.stringify( filter_items ), cache_time );
 				}
 			} else {
-				resolve( null );
+				resolve( [] );
 				if ( !no_cache ) {
 					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, "[]", cache_time );
 				}
 			}
 		} ).catch( reason => {
 			bot.logger.error( reason );
-			resolve( null );
+			resolve( [] );
 		} )
 	} );
 }
