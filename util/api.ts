@@ -61,7 +61,7 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 			}: News = res.data.data;
 			
 			news = items.map( ( value, index ) => `${ index + 1 }. ` + value.title ).join( "\n" );
-			news = `${ cn }\n` + news;
+			news = `-- ${ date } --${ cn }\n` + news;
 			
 			bot.redis.setString( key, news, 3600 ).catch( reason => bot.logger.warn( reason ) );
 			
