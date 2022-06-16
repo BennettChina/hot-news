@@ -186,7 +186,8 @@ export class ScheduleNews {
 		const { article } = <BiliDynamicMajorArticle>card.modules.module_dynamic.major;
 		const name = card.modules.module_author.name;
 		this.bot.logger.info( `[hot-news]获取到B站${ name }新动态[${ article.desc }]` );
-		let msg = `B站${ name }发布新动态了!\n ${ article.desc }`;
+		const route = `https:${ article.jump_url }`;
+		let msg = `B站${ name }发布新动态了!${ this.config.isSendUrl ? `\n动态地址：${ route }` : "" }\n ${ article.desc }`;
 		await this.sendMsg( type, targetId, msg );
 		
 		// 检测是否图片消息是否已经缓存
@@ -198,8 +199,7 @@ export class ScheduleNews {
 		}
 		
 		// 图可能比较大，单独再发送一张图
-		const res = await renderer.asForFunction( `https:${ article.jump_url }`
-			, ScheduleNews.articleDynamicPageFunction, this.viewPort );
+		const res = await renderer.asForFunction( route, ScheduleNews.articleDynamicPageFunction, this.viewPort );
 		if ( res.code === 'ok' ) {
 			imgMsg = ScheduleNews.asCqCode( res.data );
 			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ card.id_str }`, imgMsg, this.config.biliScreenshotCacheTime );
@@ -227,15 +227,19 @@ export class ScheduleNews {
 			return;
 		}
 		
-		const res = await renderer.asForFunction( `https://t.bilibili.com/${ id_str }`, ScheduleNews.normalDynamicPageFunction, this.viewPort );
+		const route = `https://t.bilibili.com/${ id_str }`;
+		const res = await renderer.asForFunction( route, ScheduleNews.normalDynamicPageFunction, this.viewPort );
 		msg = `B站${ name }发布新动态了!`;
+		if ( this.config.isSendUrl ) {
+			msg += `\n动态地址：${ route }`;
+		}
 		if ( res.code === 'ok' ) {
 			const cqCode = ScheduleNews.asCqCode( res.data );
 			msg += "\n" + cqCode;
 			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ id_str }`, msg, this.config.biliScreenshotCacheTime );
 		} else {
 			this.bot.logger.error( res.error );
-			msg += "(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]"
+			msg += "\n(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]"
 		}
 		await this.sendMsg( type, targetId, msg );
 	}

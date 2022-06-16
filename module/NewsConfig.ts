@@ -15,6 +15,8 @@ export default class NewsConfig {
 	public biliScreenshotCacheTime: number;
 	/** B站直播状态缓存时间（小时），在此时间内不会再次推送该直播间 */
 	public biliLiveCacheTime: number;
+	/** 推送B站动态时是否发送该动态的访问链接 */
+	public isSendUrl: boolean;
 	
 	public static init = {
 		maxSubscribeNum: 5,
@@ -23,7 +25,8 @@ export default class NewsConfig {
 		biliDynamicApiCacheTime: 175,
 		biliLiveApiCacheTime: 175,
 		biliScreenshotCacheTime: 60,
-		biliLiveCacheTime: 8
+		biliLiveCacheTime: 8,
+		isSendUrl: false
 	};
 	
 	constructor( config: any ) {
@@ -34,6 +37,7 @@ export default class NewsConfig {
 		this.biliLiveApiCacheTime = config.biliLiveApiCacheTime;
 		this.biliScreenshotCacheTime = config.biliScreenshotCacheTime;
 		this.biliLiveCacheTime = config.biliLiveCacheTime;
+		this.isSendUrl = config.isSendUrl;
 	}
 	
 	public async refresh( config ): Promise<string> {
@@ -45,6 +49,7 @@ export default class NewsConfig {
 			this.biliLiveApiCacheTime = config.biliLiveApiCacheTime;
 			this.biliScreenshotCacheTime = config.biliScreenshotCacheTime;
 			this.biliLiveCacheTime = config.biliLiveCacheTime;
+			this.isSendUrl = config.isSendUrl;
 			return "hot_news.yml 重新加载完毕";
 		} catch ( error ) {
 			throw <RefreshCatch>{
