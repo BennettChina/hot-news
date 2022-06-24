@@ -328,6 +328,7 @@ export class ScheduleNews {
 			if ( archive ) {
 				const image: ImgPttElem = segment.image( archive.cover, true, 5000 );
 				archive.cover = segment.toCqcode( image );
+				archive.jump_url = "https:" + archive.jump_url;
 				msg = eval( this.config.videoDynamicTemplate );
 			} else {
 				msg = eval( this.config.dynamicTemplate );

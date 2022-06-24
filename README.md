@@ -192,7 +192,7 @@ errorMsgTemplate: "`(＞﹏＜)[图片渲染出错了，请自行前往B站查�
     desc: string;// 视频的简介
     disable_preview: boolean;
     duration_text: string;// 视频的时长
-    jump_url: string;// 跳转链接（无协议头）
+    jump_url: string;// 跳转链接
     stat: {
         danmaku: string;//弹幕数量
         play: string; // 播放数量
