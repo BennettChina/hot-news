@@ -12,9 +12,31 @@ export interface BiliDynamicCard {
 		module_author: BiliDynamicModuleAuthor;
 		module_dynamic: BiliDynamicModuleDynamic;
 		module_tag: { text: string };
+		module_stat: {
+			comment: Comment;
+			forward: Forward;
+			like: Like;
+		};
 	};
 	type: BiliDynamicType;
 	visible: boolean;
+}
+
+interface Comment {
+	count: number;
+	forbidden: boolean;
+	hidden: boolean;
+}
+
+interface Forward {
+	count: number;
+	forbidden: boolean;
+}
+
+interface Like {
+	count: number;
+	forbidden: boolean;
+	status: boolean;
 }
 
 /**
@@ -88,26 +110,28 @@ type BiliDynamicMajorType =
  */
 export interface BiliDynamicMajorArchive {
 	type: BiliDynamicMajorType;
-	archive: {
-		aid: string;
-		badge: {
-			bg_color: string;
-			color: string;
-			text: string
-		};
-		bvid: string;
-		cover: string;
-		desc: string;
-		disable_preview: boolean;
-		duration_text: string;
-		jump_url: string;
-		stat: {
-			danmaku: string;
-			play: string
-		};
-		title: string;
-		type: number;
-	}
+	archive: BiliDynamicMajorArchiveInfo
+}
+
+export interface BiliDynamicMajorArchiveInfo {
+	aid: string;
+	badge: {
+		bg_color: string;
+		color: string;
+		text: string
+	};
+	bvid: string;
+	cover: string;
+	desc: string;
+	disable_preview: boolean;
+	duration_text: string;
+	jump_url: string;
+	stat: {
+		danmaku: string;
+		play: string
+	};
+	title: string;
+	type: number;
 }
 
 /**
@@ -175,6 +199,12 @@ export interface BiliLiveInfo {
 		title: string;
 		url: string;
 		cover: string;
+		watched_show: {
+			switch: boolean;
+			num: number;// 直播间人气值
+			text_small: string; // 人气值字符串
+			text_large: string; // 带描述的人气值字符串，示例：100人气
+		}
 	} | null;
 	name: string;
 }
@@ -242,4 +272,28 @@ export interface ChatInfo {
 	targetId: number;
 	user_id: number;
 	type: MessageType;
+}
+
+/**
+ * @interface DynamicInfo
+ * 动态信息
+ * @id 动态ID
+ * @name: UP的名称
+ * @uid UP的UID
+ * @pub_time 发布时间(示例: 06-24、昨天)
+ * @pub_tss 动态发布的具体时间
+ * @comment_num 评论数量
+ * @forward_num 转发数量
+ * @like_num 点赞数量
+ */
+export interface DynamicInfo {
+	id: string;
+	name: string;
+	uid: number;
+	pub_time: string;
+	pub_tss: string;
+	comment_num: number;
+	forward_num: number;
+	like_num: number;
+	archive?: BiliDynamicMajorArchiveInfo;
 }

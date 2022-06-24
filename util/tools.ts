@@ -6,6 +6,12 @@ export const formatDate: ( date: Date ) => string = ( date ) => {
 	return dateArr.join( '-' );
 }
 
+export const formatTimestamp: ( timestamp: number ) => string = ( timestamp ) => {
+	const date = new Date( timestamp );
+	const dateArr: number[] = [ date.getFullYear(), date.getMonth() + 1, date.getDate() ];
+	return dateArr.join( '-' ) + " " + date.toLocaleTimeString( "zh-CN", { hour12: false } );
+}
+
 export const getChatInfo: ( messageData: Message ) => ChatInfo = ( messageData ) => {
 	// 获取当前对话的群号或者QQ号
 	if ( isGroupMessage( messageData ) ) {
