@@ -34,7 +34,7 @@ export default class NewsConfig {
 		biliLiveApiCacheTime: 175,
 		biliScreenshotCacheTime: 60,
 		biliLiveCacheTime: 8,
-		liveTemplate: "`[B站] ${name}开播啦!\\n标题：${title}\\n直播间：${url}\\n${img}`",
+		liveTemplate: "`[B站] ${up_name}开播啦!\\n标题：${title}\\n直播间：${url}\\n${img}`",
 		dynamicTemplate: "`[B站] ${name}发布新动态了!\\n动态地址：${url}\\n${img}`",
 		articleDynamicTemplate: "`[B站] ${name}发布新动态了!\\n动态地址：${url}\\n ${desc}`",
 		videoDynamicTemplate: "`[B站] ${name}发布新的投稿视频了!\\n标题：${archive.title}\\简介：${archive.desc}\\n视频地址：${archive.jump_url}\\n${img}`",

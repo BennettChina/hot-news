@@ -11,7 +11,7 @@ import { renderer } from "#hot-news/init";
 import {
 	BiliDynamicCard,
 	BiliDynamicMajorArchive,
-	BiliDynamicMajorArticle,
+	BiliDynamicMajorArticle, BiliLiveInfo,
 	ChatInfo,
 	DynamicInfo
 } from "#hot-news/types/type";
@@ -213,11 +213,11 @@ export class ScheduleNews {
 			for ( let uid of uidList ) {
 				const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 				if ( !notification_status ) {
-					const live = await getBiliLive( uid, false, this.config.biliLiveApiCacheTime );
+					const live: BiliLiveInfo = await getBiliLive( uid, false, this.config.biliLiveApiCacheTime );
 					if ( live && live.liveRoom && live.liveRoom.liveStatus === 1 ) {
 						// noinspection JSUnusedLocalSymbols
 						const {
-							name,
+							name: up_name,
 							liveRoom: { title, url, cover, watched_show: { num, text_large, text_small } }
 						} = live;
 						const cacheTime: number = this.config.biliLiveCacheTime * 60 * 60;
