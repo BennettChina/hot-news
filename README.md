@@ -96,7 +96,7 @@ articleDynamicTemplate: "`[B站] ${name}发布新动态了!\\n动态地址：${u
 # B站视频动态推送的模版消息
 videoDynamicTemplate: "`[B站] ${name}发布新的投稿视频了!\\n标题：${archive.title}\\简介：${archive.desc}\\n视频地址：${archive.jump_url}\\n${img}`"
 # B站动态截图渲染失败的模版消息
-errorMsgTemplate: "`(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]`"
+errorMsgTemplate: "`[B站] ${name}发布新动态了\\n动态地址：${url}\\n(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]`"
 ```
 
 ### 模版消息配置
