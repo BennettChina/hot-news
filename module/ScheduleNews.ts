@@ -165,7 +165,7 @@ export class ScheduleNews {
 					}
 					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", this.config.biliLiveCacheTime * 60 * 60 );
 				} else if ( card.type === "DYNAMIC_TYPE_AV" ) {
-					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态[${ card.modules.module_dynamic.desc?.text || "投稿视频" }]` );
+					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--[${ card.modules.module_dynamic.desc?.text || "投稿视频" }]` );
 					const { archive } = <BiliDynamicMajorArchive>card.modules.module_dynamic.major;
 					const dynamicInfo: DynamicInfo = {
 						id: card.id_str,
@@ -180,7 +180,7 @@ export class ScheduleNews {
 					};
 					await this.normalDynamicHandle( dynamicInfo, chatInfo );
 				} else {
-					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态[${ card.modules.module_dynamic.desc?.text }]` );
+					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--[${ card.modules.module_dynamic.desc?.text }]` );
 					const dynamicInfo: DynamicInfo = {
 						id: card.id_str,
 						name,
@@ -261,7 +261,7 @@ export class ScheduleNews {
 		} = card.modules.module_stat;
 		const pub_tsm: number = pub_ts * 1000;
 		const pub_tss: string = formatTimestamp( pub_tsm );
-		this.bot.logger.info( `[hot-news]--获取到B站-[${ pub_tss }]发布的${ name }新动态[${ desc }]` );
+		this.bot.logger.info( `[hot-news]--获取到B站-[${ pub_tss }]发布的${ name }新动态--[${ id }]--[${ desc }]` );
 		const url = `https:${ jump_url }`;
 		let msg = eval( this.config.articleDynamicTemplate );
 		await this.sendMsg( type, targetId, msg );
