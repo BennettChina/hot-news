@@ -3,7 +3,6 @@ import { OrderConfig } from "@modules/command";
 import { MessageScope, MessageType } from "@modules/message";
 import { AuthLevel } from "@modules/management/auth";
 import { DB_KEY } from "#hot-news/util/constants";
-import { config as genshinConfig } from "#genshin/init";
 import { Renderer } from "@modules/renderer";
 import { BOT } from "@modules/bot";
 import { ScheduleNews } from "#hot-news/module/ScheduleNews";
@@ -207,7 +206,7 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	await scheduleNews.initAllBiliDynamic();
 	
 	/* 实例化渲染器 */
-	renderer = bot.renderer.register( "hot-news", "/", genshinConfig.serverPort, "" );
+	renderer = bot.renderer.register( "hot-news", "/", 0, "" );
 	
 	/* 创建原神动态定时任务 */
 	scheduleNews.createBiliSchedule();

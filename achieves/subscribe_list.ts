@@ -1,18 +1,18 @@
 import { InputParameter } from "@modules/command";
 import { getChatInfo } from "#hot-news/util/tools";
 import { MessageType } from "@modules/message";
-import { AuthLevel } from "@modules/management/auth";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getBiliLive } from "#hot-news/util/api";
 import { config } from "#hot-news/init";
+import { GroupMessageEventData } from "oicq";
 
-export async function main( { sendMessage, messageData, auth, redis }: InputParameter ): Promise<void> {
-	const { type, targetId, user_id } = getChatInfo( messageData );
+export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
+	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
-		const check = await auth.check( user_id, AuthLevel.Manager )
-		if ( !check ) {
-			await sendMessage( '您的权限不能使用该指令', true );
+		const groupMsg = <GroupMessageEventData>messageData;
+		if ( groupMsg.sender.role === 'member' ) {
+			await sendMessage( '您不是本群管理不能使用该指令', true );
 			return;
 		}
 	}
@@ -38,6 +38,6 @@ export async function main( { sendMessage, messageData, auth, redis }: InputPara
 		upNames.push( `\n\t- ${ uid }(${ info.name })` );
 	}
 	
-	let msg: string = `[${ targetId }]的订阅信息:\n新闻: ${ existNews ? `[${ CHANNEL_NAME[channel] }]` : "未订阅新闻" }\nB站UP: ${ existBili ? `${ upNames.join(" ") }\n您还可以订阅${ config.maxSubscribeNum - upNames.length }位UP主.` : "未订阅B站UP" }`;
+	let msg: string = `[${ targetId }]的订阅信息:\n新闻: ${ existNews ? `[${ CHANNEL_NAME[channel] }]` : "未订阅新闻" }\nB站UP: ${ existBili ? `${ upNames.join( " " ) }\n您还可以订阅${ config.maxSubscribeNum - upNames.length }位UP主.` : "未订阅B站UP" }`;
 	await sendMessage( msg );
 }

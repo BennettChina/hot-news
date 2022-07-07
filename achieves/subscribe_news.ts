@@ -2,11 +2,10 @@ import { InputParameter } from "@modules/command";
 import { MessageType } from "@modules/message";
 import { getNews } from "#hot-news/util/api";
 import { getChatInfo } from "#hot-news/util/tools";
-import { AuthLevel } from "@modules/management/auth";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { config, scheduleNews } from "#hot-news/init";
-import { Sendable } from "oicq";
+import { GroupMessageEventData, Sendable } from "oicq";
 import Database from "@modules/database";
 
 export const getChannelKey: ( channel: string ) => ( string | null ) = ( channel ) => {
@@ -47,9 +46,9 @@ async function biliHandler( targetId: number, sendMessage: ( content: Sendable, 
 	return;
 }
 
-export async function main( { sendMessage, messageData, redis, auth }: InputParameter ): Promise<void> {
+export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
 	const channel = messageData.raw_message || '头条';
-	const { type, targetId, user_id } = getChatInfo( messageData );
+	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Unknown ) {
 		await sendMessage( '不支持的聊天来源,请在需要订阅的群里或者好友对话中使用!' );
 		return;
@@ -68,9 +67,9 @@ export async function main( { sendMessage, messageData, redis, auth }: InputPara
 	const db_data = JSON.stringify( { targetId, type } );
 	
 	if ( type === MessageType.Group ) {
-		const check = await auth.check( user_id, AuthLevel.Manager )
-		if ( !check ) {
-			await sendMessage( '您的权限不能使用该指令', true );
+		const groupMsg = <GroupMessageEventData>messageData;
+		if ( groupMsg.sender.role === 'member' ) {
+			await sendMessage( '您不是本群管理不能使用该指令', true );
 			return;
 		}
 	}

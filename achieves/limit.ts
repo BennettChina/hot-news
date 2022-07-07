@@ -1,15 +1,15 @@
 import { InputParameter } from "@modules/command";
 import { getChatInfo } from "#hot-news/util/tools";
 import { MessageType } from "@modules/message";
-import { AuthLevel } from "@modules/management/auth";
 import { DB_KEY } from "#hot-news/util/constants";
+import { GroupMessageEventData } from "oicq";
 
-export async function main( { sendMessage, messageData, auth, redis }: InputParameter ): Promise<void> {
-	const { type, targetId, user_id } = getChatInfo( messageData );
+export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
+	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
-		const check = await auth.check( user_id, AuthLevel.Manager )
-		if ( !check ) {
-			await sendMessage( '您的权限不能使用该指令', true );
+		const groupMsg = <GroupMessageEventData>messageData;
+		if ( groupMsg.sender.role === 'member' ) {
+			await sendMessage( '您不是本群管理不能使用该指令', true );
 			return;
 		}
 	}

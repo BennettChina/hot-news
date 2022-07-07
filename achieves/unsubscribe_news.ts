@@ -2,18 +2,17 @@ import { InputParameter } from "@modules/command";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getChatInfo } from "#hot-news/util/tools";
 import { MessageType } from "@modules/message";
-import { AuthLevel } from "@modules/management/auth";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import Database from "@modules/database";
-import { Sendable } from "oicq";
+import { GroupMessageEventData, Sendable } from "oicq";
 
-export async function main( { sendMessage, messageData, redis, auth }: InputParameter ): Promise<void> {
+export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
 	const channel = messageData.raw_message || '新闻';
-	const { type, targetId, user_id } = getChatInfo( messageData );
+	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
-		const check = await auth.check( user_id, AuthLevel.Manager )
-		if ( !check ) {
-			await sendMessage( '您的权限不能使用该指令', true );
+		const groupMsg = <GroupMessageEventData>messageData;
+		if ( groupMsg.sender.role === 'member' ) {
+			await sendMessage( '您不是本群管理不能使用该指令', true );
 			return;
 		}
 	}
