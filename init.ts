@@ -39,13 +39,13 @@ const unsubscribe_news: OrderConfig = {
 const limit_genshin_dynamic_notify: OrderConfig = {
 	type: "order",
 	cmdKey: "hot-news.limit_genshin_dynamic_notify",
-	desc: [ "限制原神动态推送", "[小时]" ],
+	desc: [ "设置动态推送保留时间", "[小时]" ],
 	headers: [ "lgdn" ],
 	regexps: [ "\\d+" ],
 	scope: MessageScope.Both,
 	auth: AuthLevel.User,
 	main: "achieves/limit",
-	detail: "限制推送原神的动态信息，如果这条动态已经过去了某某小时则视为用户已自行得知该消息，放弃推送该消息"
+	detail: "设置推送动态信息的保留时间，如果这条动态已经过去了某某小时则视为用户已自行得知该消息，放弃推送该消息"
 };
 
 const my_subscribe_list: OrderConfig = {
