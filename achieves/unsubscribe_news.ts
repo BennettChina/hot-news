@@ -1,6 +1,6 @@
 import { InputParameter } from "@modules/command";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
-import { getChatInfo } from "#hot-news/util/tools";
+import { getChannelKey, getChatInfo } from "#hot-news/util/tools";
 import { MessageType } from "@modules/message";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import Database from "@modules/database";
@@ -19,17 +19,15 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	
 	let member = JSON.stringify( { targetId, type } )
 	// 处理原神B站动态订阅
-	const isNumber = /\d/.test( channel );
-	if ( channel === CHANNEL_NAME.genshin || ( isNumber && parseInt( channel ) === 401742377 ) ) {
+	let channelKey = getChannelKey( channel )
+	if ( channel === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
 		await unsubscribeBili( targetId, member, 401742377, redis, sendMessage );
 		return;
 	}
 	
 	// 处理B站UP主订阅
-	if ( isNumber ) {
-		// 初始化该UP的动态数据
-		const uid = parseInt( channel );
-		await unsubscribeBili( targetId, member, uid, redis, sendMessage );
+	if ( typeof channelKey === "number" ) {
+		await unsubscribeBili( targetId, member, channelKey, redis, sendMessage );
 		return;
 	}
 	

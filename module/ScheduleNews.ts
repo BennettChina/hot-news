@@ -17,6 +17,8 @@ import {
 } from "#hot-news/types/type";
 import NewsConfig from "#hot-news/module/NewsConfig";
 import { formatTimestamp } from "#hot-news/util/tools";
+import { Order } from "@modules/command";
+import { AuthLevel } from "@modules/management/auth";
 
 export class ScheduleNews {
 	private readonly viewPort: puppeteer.Viewport;
@@ -292,7 +294,14 @@ export class ScheduleNews {
 			await sendMessage( msg );
 		} else {
 			const sendMessage = this.bot.message.getSendMessageFunc( -1, MessageType.Group, targetId );
-			await sendMessage( msg, false );
+			try {
+				await sendMessage( msg, false );
+			} catch ( e ) {
+				const REMOVE = <Order>this.bot.command.getSingle( "hot-news.remove_subscribe", AuthLevel.Master );
+				const message = `[${ targetId }]的订阅消息发送失败，该群可能被封禁中，可使用${ REMOVE.getHeaders()[0] }指令移除该群聊的订阅`;
+				this.bot.logger.error( message, e );
+				await this.bot.message.sendMaster( message );
+			}
 		}
 	}
 	

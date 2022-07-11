@@ -1,5 +1,6 @@
 import { isGroupMessage, isPrivateMessage, Message, MessageType } from "@modules/message";
 import { ChatInfo } from "#hot-news/types/type";
+import { CHANNEL_NAME } from "#hot-news/util/constants";
 
 export const formatDate: ( date: Date ) => string = ( date ) => {
 	const dateArr: number[] = [ date.getFullYear(), date.getMonth() + 1, date.getDate() ];
@@ -33,4 +34,20 @@ export const getChatInfo: ( messageData: Message ) => ChatInfo = ( messageData )
 			type: MessageType.Unknown
 		};
 	}
+}
+
+export const getChannelKey: ( channel: string ) => ( string | number | null ) = ( channel ) => {
+	const reg = new RegExp( /\d+/ );
+	const isNumber = reg.test( channel );
+	if ( isNumber ) {
+		return parseInt( reg.exec( channel )![0] );
+	}
+	
+	for ( let k in CHANNEL_NAME ) {
+		if ( CHANNEL_NAME[k] === channel ) {
+			return k;
+		}
+	}
+	
+	return null;
 }

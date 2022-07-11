@@ -60,11 +60,23 @@ const my_subscribe_list: OrderConfig = {
 	detail: "查看我订阅的新闻和UP主"
 };
 
+const remove_subscribe: OrderConfig = {
+	type: "order",
+	cmdKey: "hot-news.remove_subscribe",
+	desc: [ "移除某群订阅的消息", "[群号]" ],
+	headers: [ "rms" ],
+	regexps: [ "\\d+" ],
+	scope: MessageScope.Private,
+	auth: AuthLevel.Manager,
+	main: "achieves/remove_subscribe",
+	detail: "该指令用户移除某个群的所有新闻和B站订阅"
+};
+
 export let renderer: Renderer;
 export let config: NewsConfig;
 export let scheduleNews: ScheduleNews;
 
-async function clearSubscribe( targetId: number, messageType: MessageType, { redis, logger }: BOT ) {
+export async function clearSubscribe( targetId: number, messageType: MessageType, { redis, logger }: BOT ) {
 	let member: string = JSON.stringify( { targetId, type: messageType } )
 	// 处理原神B站动态订阅
 	const exist: boolean = await redis.existSetMember( DB_KEY.sub_bili_ids_key, member )
@@ -217,6 +229,6 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	
 	return {
 		pluginName: "hot-news",
-		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify, my_subscribe_list ]
+		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify, my_subscribe_list, remove_subscribe ]
 	};
 }

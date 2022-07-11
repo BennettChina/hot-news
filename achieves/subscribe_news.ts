@@ -1,26 +1,12 @@
 import { InputParameter } from "@modules/command";
 import { MessageType } from "@modules/message";
-import { getNews } from "#hot-news/util/api";
-import { getChatInfo } from "#hot-news/util/tools";
+import { getBiliLive, getNews } from "#hot-news/util/api";
+import { getChannelKey, getChatInfo } from "#hot-news/util/tools";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { config, scheduleNews } from "#hot-news/init";
 import { GroupMessageEventData, Sendable } from "oicq";
 import Database from "@modules/database";
-
-export const getChannelKey: ( channel: string ) => ( string | null ) = ( channel ) => {
-	if ( /\d/.test( channel ) ) {
-		return channel
-	}
-	
-	for ( let k in CHANNEL_NAME ) {
-		if ( CHANNEL_NAME[k] === channel ) {
-			return k;
-		}
-	}
-	
-	return null;
-}
 
 
 async function biliHandler( targetId: number, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<void>, redis: Database, db_data: string, uid: number ) {
@@ -46,7 +32,7 @@ async function biliHandler( targetId: number, sendMessage: ( content: Sendable, 
 	return;
 }
 
-export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
+export async function main( { sendMessage, messageData, redis, logger }: InputParameter ): Promise<void> {
 	const channel = messageData.raw_message || '头条';
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Unknown ) {
@@ -75,27 +61,33 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	}
 	
 	// 处理原神B站动态订阅
-	const isNumber = /\d/.test( channel );
-	if ( channel === CHANNEL_NAME.genshin || ( isNumber && parseInt( channel ) === 401742377 ) ) {
+	if ( channelKey === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
 		await biliHandler( targetId, sendMessage, redis, db_data, 401742377 );
 		return;
 	}
 	
-	// 处理B站UP主订阅
-	if ( isNumber ) {
+	if ( typeof channelKey === "number" ) {
+		// 处理B站UP主订阅
+		try {
+			const info = await getBiliLive( channelKey, true );
+			if ( !info ) {
+				await sendMessage( `[${ channel }]不是一个可用的 uid`, true );
+			}
+		} catch ( e ) {
+			logger.warn( `获取B站[${ channelKey }]个人信息失败!`, e );
+			await sendMessage( `查询B站[${ channel }]时网络请求错误, 请联系 BOT 持有者反馈该问题!`, true );
+		}
 		// 初始化该UP的动态数据
-		const uid = parseInt( channel );
-		await biliHandler( targetId, sendMessage, redis, db_data, uid );
+		await biliHandler( targetId, sendMessage, redis, db_data, channelKey );
 		return;
-	}
-	
-	// 处理新闻订阅
-	await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: channelKey } );
-	redis.addSetMember( DB_KEY.ids, db_data ).then( () => {
-		sendMessage( `[${ targetId }]已成功订阅[${ channel }]新闻。` );
-		getNews( channelKey! ).then( news => {
-			sendMessage( news );
+	} else {
+		// 处理新闻订阅
+		await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: channelKey } );
+		redis.addSetMember( DB_KEY.ids, db_data ).then( () => {
+			sendMessage( `[${ targetId }]已成功订阅[${ channel }]新闻。` );
+			getNews( `${ channelKey }` ).then( news => {
+				sendMessage( news );
+			} );
 		} );
-	} );
-	
+	}
 }
