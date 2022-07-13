@@ -93,7 +93,8 @@ export async function main( { sendMessage, messageData, redis, logger }: InputPa
 	} else {
 		// 处理新闻、摸鱼等订阅
 		let value: string = await redis.getHashField( DB_KEY.channel, `${ targetId }` );
-		value = value.startsWith( "[" ) ? value : `[${ value }]`;
+		value = value.startsWith( "[" ) ? value : `["${ value }"]`;
+		logger.info( `[hot-news]-value:${ value }` );
 		let parse: string[] = JSON.parse( value );
 		if ( !parse.includes( channelKey ) ) {
 			parse.push( channelKey );

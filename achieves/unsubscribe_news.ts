@@ -41,7 +41,7 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 		await sendMessage( `[${ targetId }]未订阅[${ channel }]` );
 	} else {
 		let value: string = await redis.getHashField( DB_KEY.channel, `${ targetId }` );
-		value = value.startsWith( "[" ) ? value : `[${ value }]`;
+		value = value.startsWith( "[" ) ? value : `["${ value }"]`;
 		let parse: string[] = JSON.parse( value );
 		if ( !parse.includes( channelKey ) ) {
 			await sendMessage( `[${ targetId }]未订阅[${ channel }]` );
