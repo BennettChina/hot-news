@@ -25,6 +25,11 @@ export default class NewsConfig {
 	public videoDynamicTemplate: string;
 	/** B站动态截图渲染失败的模版消息 */
 	public errorMsgTemplate: string;
+	/** 订阅摸鱼日报 */
+	public subscribeMoyu: {
+		enable: boolean;
+		cronRule: string;
+	}
 	
 	public static init = {
 		maxSubscribeNum: 5,
@@ -39,6 +44,10 @@ export default class NewsConfig {
 		articleDynamicTemplate: "`[B站] ${name}发布新动态了!\\n动态地址：${url}\\n ${desc}`",
 		videoDynamicTemplate: "`[B站] ${name}发布新的投稿视频了!\\n标题：${archive.title}\\简介：${archive.desc}\\n视频地址：${archive.jump_url}\\n${img}`",
 		errorMsgTemplate: "`[B站] ${name}发布新动态了\\n动态地址：${url}\\n(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]`",
+		subscribeMoyu: {
+			enable: false,
+			cronRule: "0 9 * * * *"
+		},
 	};
 	
 	constructor( config: any ) {
@@ -54,12 +63,16 @@ export default class NewsConfig {
 		this.articleDynamicTemplate = config.articleDynamicTemplate;
 		this.videoDynamicTemplate = config.videoDynamicTemplate;
 		this.errorMsgTemplate = config.errorMsgTemplate;
+		this.subscribeMoyu = {
+			enable: config.subscribeMoyu.enable,
+			cronRule: config.subscribeMoyu.cronRule
+		};
 	}
 	
 	public async refresh( config ): Promise<string> {
 		try {
 			this.maxSubscribeNum = config.maxSubscribeNum;
-			this.biliDynamicScheduleRule = config.biliDynamicTime;
+			this.biliDynamicScheduleRule = config.biliDynamicScheduleRule;
 			this.biliLiveScheduleRule = config.biliLiveScheduleRule;
 			this.biliDynamicApiCacheTime = config.biliDynamicApiCacheTime;
 			this.biliLiveApiCacheTime = config.biliLiveApiCacheTime;
@@ -70,6 +83,10 @@ export default class NewsConfig {
 			this.articleDynamicTemplate = config.articleDynamicTemplate;
 			this.videoDynamicTemplate = config.videoDynamicTemplate;
 			this.errorMsgTemplate = config.errorMsgTemplate;
+			this.subscribeMoyu = {
+				enable: config.subscribeMoyu.enable,
+				cronRule: config.subscribeMoyu.cronRule
+			};
 			return "hot_news.yml 重新加载完毕";
 		} catch ( error ) {
 			throw <RefreshCatch>{

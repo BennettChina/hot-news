@@ -19,6 +19,8 @@ export const DB_KEY = {
 	img_msg_key: 'hot_news.img_msg',
 	// 用户订阅的bilibili up主uid
 	notify_bili_ids_key: 'hot_news.notify_bili_ids',
+	// 摸鱼日报图的URL缓存
+	moyu_img_url_key: 'hot_news.moyu_img_url',
 }
 
 export const CHANNEL_NAME = {
@@ -27,5 +29,6 @@ export const CHANNEL_NAME = {
 	wangyi: '网易',
 	zhihu: '知乎',
 	baidu: '百度',
-	genshin: '原神'
+	genshin: '原神',
+	moyu: '摸鱼',
 }

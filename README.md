@@ -102,6 +102,10 @@ articleDynamicTemplate: "`[B站] ${name}发布新动态了!\\n动态地址：${u
 videoDynamicTemplate: "`[B站] ${name}发布新的投稿视频了!\\n标题：${archive.title}\\简介：${archive.desc}\\n视频地址：${archive.jump_url}\\n${img}`"
 # B站动态截图渲染失败的模版消息
 errorMsgTemplate: "`[B站] ${name}发布新动态了\\n动态地址：${url}\\n(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]`"
+# 摸鱼日报订阅配置
+subscribeMoyu:
+    enable: false
+    cronRule: 0 9 * * * *
 ```
 
 ### 模版消息配置
@@ -209,6 +213,7 @@ errorMsgTemplate: "`[B站] ${name}发布新动态了\\n动态地址：${url}\\n(
 
 ## 更新日志
 
+- 2022/07/13 修复定时任务的 `cron` 规则配置刷新指令无法生效的问题；增加摸鱼日报功能，可在 `hot_news.yml` 中启用该功能，默认不启用；
 - 2022/07/11 修复订阅B站时格式错误导致推送等无法使用的问题；增加 `#rms` 指令移除某个群的订阅(私聊中 BOT 管理员权限可用)。
 - 2022/07/07 优化群消息订阅的权限为群管理员而不是 BOT 管理员。
 - 2022/06/25 修复直播推送的消息模版无法获取到 `name` 参数的问题，变更UP名称的参数名为 `up_name` 。

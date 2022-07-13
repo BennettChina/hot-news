@@ -1,17 +1,18 @@
-import { Job, scheduleJob } from "node-schedule";
+import { cancelJob, Job, scheduleJob } from "node-schedule";
 import { randomInt } from "#genshin/utils/random";
-import { DB_KEY } from "#hot-news/util/constants";
+import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getHashField } from "#hot-news/util/RedisUtils";
-import { getBiliDynamicNew, getBiliLive, getNews } from "#hot-news/util/api";
+import { getBiliDynamicNew, getBiliLive } from "#hot-news/util/api";
 import { MessageType } from "@modules/message";
 import { BOT } from "@modules/bot";
 import puppeteer from "puppeteer";
 import { ImgPttElem, segment } from "oicq";
-import { renderer } from "#hot-news/init";
+import { renderer, scheduleNews } from "#hot-news/init";
 import {
 	BiliDynamicCard,
 	BiliDynamicMajorArchive,
-	BiliDynamicMajorArticle, BiliLiveInfo,
+	BiliDynamicMajorArticle,
+	BiliLiveInfo,
 	ChatInfo,
 	DynamicInfo
 } from "#hot-news/types/type";
@@ -19,6 +20,9 @@ import NewsConfig from "#hot-news/module/NewsConfig";
 import { formatTimestamp } from "#hot-news/util/tools";
 import { Order } from "@modules/command";
 import { AuthLevel } from "@modules/management/auth";
+import { ScreenshotService } from "#hot-news/module/screenshot/ScreenshotService";
+import { NewsServiceFactory } from "#hot-news/module/NewsServiceFactory";
+import { RefreshCatch } from "@modules/management/refresh";
 
 export class ScheduleNews {
 	private readonly viewPort: puppeteer.Viewport;
@@ -40,11 +44,40 @@ export class ScheduleNews {
 			const time = new Date().setSeconds( sec * 10 );
 			
 			const job: Job = scheduleJob( time, async () => {
-				await this.notifyNews();
+				await NewsServiceFactory.instance( CHANNEL_NAME.toutiao ).handler();
 				job.cancel();
 			} );
 		} );
 		this.bot.logger.info( "[hot-news]--每日热点新闻定时任务已创建完成..." );
+	}
+	
+	public initSchedule(): void {
+		/* 创建原神动态定时任务 */
+		scheduleNews.createBiliSchedule();
+		
+		if ( this.config.subscribeMoyu.enable ) {
+			scheduleJob( "hot-news-moyu-job", this.config.subscribeMoyu.cronRule, async () => {
+				await NewsServiceFactory.instance( CHANNEL_NAME.moyu ).handler();
+			} );
+			this.bot.logger.info( "[hot-news]--摸鱼日报定时任务已创建完成" );
+		}
+	}
+	
+	public async refresh(): Promise<string> {
+		try {
+			cancelJob( "hot-news-bilibili-dynamic-job" );
+			cancelJob( "hot-news-bilibili-live-job" );
+			cancelJob( "hot-news-moyu-job" );
+			
+			this.initSchedule();
+			this.bot.logger.info( "[hot-news]定时任务重新创建完成" );
+			return `[hot-news]定时任务重新创建完成`;
+		} catch ( error ) {
+			throw <RefreshCatch>{
+				log: ( <Error>error ).stack,
+				msg: `[hot-news]定时任务重新创建失败，请前往控制台查看日志`
+			};
+		}
 	}
 	
 	public createBiliSchedule(): void {
@@ -86,21 +119,6 @@ export class ScheduleNews {
 		}
 		this.bot.logger.info( `[hot-news]--初始化B站所有已订阅的UP主的动态数据完成` )
 	}
-	
-	private async notifyNews(): Promise<void> {
-		const set: string[] = await this.bot.redis.getSet( DB_KEY.ids );
-		for ( let id of set ) {
-			const { type, targetId }: ChatInfo = JSON.parse( id );
-			
-			const channel = await getHashField( DB_KEY.channel, `${ targetId }` );
-			getNews( channel ).then( news => {
-				this.sendMsg( type, targetId, news );
-			} ).catch( reason => {
-				this.bot.logger.error( reason )
-			} )
-		}
-	}
-	
 	
 	private async notifyBiliDynamic(): Promise<void> {
 		const set = await this.bot.redis.getSet( DB_KEY.sub_bili_ids_key );
@@ -277,7 +295,7 @@ export class ScheduleNews {
 		}
 		
 		// 图可能比较大，单独再发送一张图
-		const res = await renderer.asForFunction( url, ScheduleNews.articleDynamicPageFunction, this.viewPort );
+		const res = await renderer.asForFunction( url, ScreenshotService.articleDynamicPageFunction, this.viewPort );
 		if ( res.code === 'ok' ) {
 			imgMsg = ScheduleNews.asCqCode( res.data );
 			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ card.id_str }`, imgMsg, this.config.biliScreenshotCacheTime );
@@ -329,7 +347,7 @@ export class ScheduleNews {
 		}
 		
 		const url = `https://t.bilibili.com/${ id }`;
-		const res = await renderer.asForFunction( url, ScheduleNews.normalDynamicPageFunction, this.viewPort );
+		const res = await renderer.asForFunction( url, ScreenshotService.normalDynamicPageFunction, this.viewPort );
 		if ( res.code === 'ok' ) {
 			// noinspection JSUnusedLocalSymbols
 			const img = ScheduleNews.asCqCode( res.data );
@@ -353,29 +371,5 @@ export class ScheduleNews {
 	private static asCqCode( base64Str: string ): string {
 		const base64: string = `base64://${ base64Str }`;
 		return `[CQ:image,file=${ base64 }]`;
-	}
-	
-	private static async normalDynamicPageFunction( page: puppeteer.Page ): Promise<Buffer | string | void> {
-		// 把头部信息以及可能出现的未登录弹框删掉
-		await page.$eval( "#internationalHeader", element => element.remove() );
-		let card = await page.waitForSelector( ".card" );
-		let clip = await card?.boundingBox();
-		let bar = await page.waitForSelector( ".text-bar" )
-		let bar_bound = await bar?.boundingBox();
-		clip!.height = bar_bound!.y - clip!.y;
-		return await page.screenshot( {
-			clip: { x: clip!.x, y: clip!.y, width: clip!.width, height: clip!.height },
-			encoding: "base64"
-		} );
-	}
-	
-	private static async articleDynamicPageFunction( page: puppeteer.Page ): Promise<Buffer | string | void> {
-		await page.$eval( "#internationalHeader", element => element.remove() );
-		const option: puppeteer.ScreenshotOptions = { encoding: "base64" };
-		const element = await page.$( ".article-container__content" );
-		if ( element ) {
-			return await element.screenshot( option );
-		}
-		throw '渲染图片出错，未找到DOM节点';
 	}
 }

@@ -7,7 +7,7 @@ import Database from "@modules/database";
 import { GroupMessageEventData, Sendable } from "oicq";
 
 export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
-	const channel = messageData.raw_message || '新闻';
+	const channel = messageData.raw_message;
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
 		const groupMsg = <GroupMessageEventData>messageData;
@@ -19,7 +19,11 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	
 	let member = JSON.stringify( { targetId, type } )
 	// 处理原神B站动态订阅
-	let channelKey = getChannelKey( channel )
+	let channelKey = getChannelKey( channel );
+	if ( !channelKey ) {
+		await sendMessage( `[${ channel }]不是可用的信息源。` );
+		return;
+	}
 	if ( channel === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
 		await unsubscribeBili( targetId, member, 401742377, redis, sendMessage );
 		return;
@@ -31,14 +35,25 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 		return;
 	}
 	
-	// 处理新闻订阅
+	// 处理新闻等订阅
 	let exist: boolean = await redis.existSetMember( DB_KEY.ids, member )
 	if ( !exist ) {
-		await sendMessage( `[${ targetId }]未订阅新闻` );
+		await sendMessage( `[${ targetId }]未订阅[${ channel }]` );
 	} else {
-		await redis.delSetMember( DB_KEY.ids, member );
-		await redis.delHash( DB_KEY.channel, `${ targetId }` );
-		await sendMessage( `[${ targetId }]已取消订阅新闻服务` );
+		let value: string = await redis.getHashField( DB_KEY.channel, `${ targetId }` );
+		value = value.startsWith( "[" ) ? value : `[${ value }]`;
+		let parse: string[] = JSON.parse( value );
+		if ( !parse.includes( channelKey ) ) {
+			await sendMessage( `[${ targetId }]未订阅[${ channel }]` );
+			return;
+		}
+		const filter = parse.filter( v => v !== channelKey );
+		await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: JSON.stringify( filter ) } );
+		if ( filter.length === 0 ) {
+			await redis.delSetMember( DB_KEY.ids, member );
+			await redis.delHash( DB_KEY.channel, `${ targetId }` );
+		}
+		await sendMessage( `[${ targetId }]已取消订阅[${ channel }]服务` );
 	}
 }
 

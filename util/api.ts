@@ -11,7 +11,8 @@ const API = {
 	wangyi: 'https://www.anyknew.com/api/v1/sites/163',
 	toutiao: 'https://www.anyknew.com/api/v1/sites/toutiao',
 	biliDynamic: "https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space",
-	biliInfo: 'https://api.bilibili.com/x/space/acc/info'
+	biliInfo: 'https://api.bilibili.com/x/space/acc/info',
+	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 }
 
 const NEWS_HEADERS = {
@@ -153,5 +154,23 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 		} ).catch( reason => {
 			bot.logger.error( reason );
 		} )
+	} );
+}
+
+export async function getMoyuImg(): Promise<string> {
+	const url = await bot.redis.getString( DB_KEY.moyu_img_url_key );
+	if ( url ) {
+		return url;
+	}
+	
+	return new Promise( resolve => {
+		axios.get( API.moyu, { timeout: 5000 } )
+			.then( response => {
+				if ( response.data.success ) {
+					const imgUrl = response.data.url;
+					resolve( imgUrl );
+					bot.redis.setString( DB_KEY.moyu_img_url_key, imgUrl );
+				}
+			} ).catch( reason => bot.logger.error( reason ) )
 	} );
 }

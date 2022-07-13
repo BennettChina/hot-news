@@ -20,20 +20,25 @@ const subscribe_news: OrderConfig = {
 	scope: MessageScope.Both,
 	auth: AuthLevel.User,
 	main: "achieves/subscribe_news",
-	detail: "订阅每日热点新闻和B站动态，可用的新闻订阅源包括：新浪、知乎、网易、头条、百度，默认使用头条，仅可使用一个新闻源覆盖订阅(每天8:30~9点推送)。" +
-		"可用原神订阅源：原神，也可以使用B站UP的uid来订阅该UP的动态和直播"
+	detail: "订阅每日热点新闻、B站动态、摸鱼日报，可用的订阅源包括：\n" +
+		"- 新闻源：新浪、知乎、网易、头条、百度。默认使用头条，仅可使用一个新闻源覆盖订阅(每天8:30~9点推送)。\n" +
+		"- B站源：原神，也可以使用B站UP的uid来订阅该UP的动态和直播。\n" +
+		"- 摸鱼日报源：摸鱼。"
 };
 
 const unsubscribe_news: OrderConfig = {
 	type: "order",
 	cmdKey: "hot-news.unsubscribe_news",
-	desc: [ "取消订阅新闻", "(订阅源)" ],
+	desc: [ "取消订阅新闻", "[订阅源]" ],
 	headers: [ "unsubscribe_news" ],
-	regexps: [ ".*" ],
+	regexps: [ ".+" ],
 	scope: MessageScope.Both,
 	auth: AuthLevel.User,
 	main: "achieves/unsubscribe_news",
-	detail: "取消订阅的新闻。可用订阅源：新闻源(新浪、知乎、网易、头条、百度)、原神、B站UP主的uid，默认取消新闻订阅"
+	detail: "取消订阅的消息。可用订阅源：\n" +
+		"- 新闻源: 新浪、知乎、网易、头条、百度\n" +
+		"- B站源: 原神、B站UP主的uid\n" +
+		"- 摸鱼日报: 摸鱼"
 };
 
 const limit_genshin_dynamic_notify: OrderConfig = {
@@ -205,7 +210,6 @@ function decreaseGroup( bot: BOT ) {
 export async function init( bot: BOT ): Promise<PluginSetting> {
 	/* 加载 hot_news.yml 配置 */
 	config = loadConfig( bot.file );
-	bot.refresh.registerRefreshableFile( "hot_news", config );
 	
 	/* 清除旧数据 */
 	await clearDeprecatedData( bot );
@@ -220,12 +224,15 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	/* 实例化渲染器 */
 	renderer = bot.renderer.register( "hot-news", "/", 0, "" );
 	
-	/* 创建原神动态定时任务 */
-	scheduleNews.createBiliSchedule();
+	/* 初始化杂项定时任务 */
+	scheduleNews.initSchedule();
 	
 	// 监听群聊退出事件
 	bot.client.on( "notice.group.decrease", decreaseGroup( bot ) );
 	bot.logger.info( "[hot-news]群聊退出事件监听已启动成功" )
+	
+	bot.refresh.registerRefreshableFile( "hot_news", config );
+	bot.refresh.registerRefreshableFunc( scheduleNews );
 	
 	return {
 		pluginName: "hot-news",

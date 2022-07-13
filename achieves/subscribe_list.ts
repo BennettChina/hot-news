@@ -19,15 +19,19 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	
 	// 判断该用户是否有订阅
 	let member: string = JSON.stringify( { targetId, type } )
-	let existNews: boolean = await redis.existSetMember( DB_KEY.ids, member );
-	let existBili: boolean = await redis.existSetMember( DB_KEY.sub_bili_ids_key, member );
+	let [ existNews, existBili ] = await Promise.all( [ redis.existSetMember( DB_KEY.ids, member ), redis.existSetMember( DB_KEY.sub_bili_ids_key, member ) ] );
 	if ( !existNews && !existBili ) {
 		await sendMessage( `[${ targetId }]未订阅任何信息` );
 		return;
 	}
 	
 	// 获取新闻渠道
-	const channel: string = await getHashField( DB_KEY.channel, `${ targetId }` );
+	let channel: string = await getHashField( DB_KEY.channel, `${ targetId }` );
+	channel = channel.startsWith( "[" ) ? channel : `[${ channel }]`;
+	let parse: string[] = JSON.parse( channel );
+	const map = parse.map( value => {
+		return CHANNEL_NAME[value];
+	} );
 	
 	// 获取用户订阅的UP的uid
 	let upNames: string[] = [];
@@ -38,6 +42,6 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 		upNames.push( `\n\t- ${ uid }(${ info.name })` );
 	}
 	
-	let msg: string = `[${ targetId }]的订阅信息:\n新闻: ${ existNews ? `[${ CHANNEL_NAME[channel] }]` : "未订阅新闻" }\nB站UP: ${ existBili ? `${ upNames.join( " " ) }\n您还可以订阅${ config.maxSubscribeNum - upNames.length }位UP主.` : "未订阅B站UP" }`;
+	let msg: string = `[${ targetId }]的订阅信息:\n消息服务: ${ existNews ? `[${ map.join( "," ) }]` : "未订阅消息服务" }\nB站UP: ${ existBili ? `${ upNames.join( " " ) }\n您还可以订阅${ config.maxSubscribeNum - upNames.length }位UP主.` : "未订阅B站UP" }`;
 	await sendMessage( msg );
 }
