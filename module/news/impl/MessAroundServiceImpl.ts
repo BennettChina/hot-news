@@ -29,7 +29,8 @@ export class MessAroundServiceImpl implements NewsService {
 		for ( let id of set ) {
 			const { type, targetId }: ChatInfo = JSON.parse( id );
 			
-			const channel = await getHashField( DB_KEY.channel, `${ targetId }` );
+			let channel = await getHashField( DB_KEY.channel, `${ targetId }` );
+			channel = channel.startsWith( "[" ) ? channel : `["${ channel }"]`;
 			const channels: string[] = JSON.parse( channel ) || "[]";
 			if ( channels.includes( "moyu" ) ) {
 				await MessageMethod.sendMsg( type, targetId, msg );
