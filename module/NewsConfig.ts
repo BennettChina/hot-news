@@ -46,7 +46,7 @@ export default class NewsConfig {
 		errorMsgTemplate: "`[B站] ${name}发布新动态了\\n动态地址：${url}\\n(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]`",
 		subscribeMoyu: {
 			enable: false,
-			cronRule: "0 9 * * * *"
+			cronRule: "0 0 9 * * *"
 		},
 	};
 	
