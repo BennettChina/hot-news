@@ -39,6 +39,11 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 范围: 群/私聊
 权限: 用户 (User)
 
+# 订阅摸鱼日报
+命令: <header> subscribe_news 摸鱼
+范围: 群/私聊
+权限: 用户 (User)
+
 # 订阅原神
 命令: <header> subscribe_news 原神
 范围: 群/私聊
@@ -49,8 +54,8 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 范围: 群/私聊
 权限: 用户 (User)
 
-#取消订阅(选择服务),可选服务：[新闻｜原神|UP主的uid]，默认取消新闻服务
-命令: <header> unsubscribe_news
+#取消订阅(选择服务),可选服务：[新闻渠道｜原神|UP主的uid|摸鱼]
+命令: <header> unsubscribe_news 头条
 范围: 群/私聊
 权限: 用户 (User)
 
@@ -105,7 +110,7 @@ errorMsgTemplate: "`[B站] ${name}发布新动态了\\n动态地址：${url}\\n(
 # 摸鱼日报订阅配置
 subscribeMoyu:
     enable: false
-    cronRule: 0 9 * * * *
+    cronRule: 0 0 9 * * *
 ```
 
 ### 模版消息配置
@@ -213,6 +218,7 @@ subscribeMoyu:
 
 ## 更新日志
 
+- 2022/07/14 修复摸鱼日报的初始化配置错误问题；修复摸鱼日报数据兼容问题；修复摸鱼日报的缓存未设置有效期导致持续使用缓存数据问题。
 - 2022/07/13 修复定时任务的 `cron` 规则配置刷新指令无法生效的问题；增加摸鱼日报功能，可在 `hot_news.yml` 中启用该功能，默认不启用；
 - 2022/07/11 修复订阅B站时格式错误导致推送等无法使用的问题；增加 `#rms` 指令移除某个群的订阅(私聊中 BOT 管理员权限可用)。
 - 2022/07/07 优化群消息订阅的权限为群管理员而不是 BOT 管理员。
