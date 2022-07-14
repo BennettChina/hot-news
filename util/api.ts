@@ -158,7 +158,9 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 }
 
 export async function getMoyuImg(): Promise<string> {
-	const url = await bot.redis.getString( DB_KEY.moyu_img_url_key );
+	let date = formatDate( new Date() );
+	let key = `${ DB_KEY.moyu_img_url_key }.${ date }`;
+	const url = await bot.redis.getString( key );
 	if ( url ) {
 		return url;
 	}
@@ -169,7 +171,7 @@ export async function getMoyuImg(): Promise<string> {
 				if ( response.data.success ) {
 					const imgUrl = response.data.url;
 					resolve( imgUrl );
-					bot.redis.setString( DB_KEY.moyu_img_url_key, imgUrl );
+					bot.redis.setString( key, imgUrl, 3600 );
 				}
 			} ).catch( reason => bot.logger.error( reason ) )
 	} );
