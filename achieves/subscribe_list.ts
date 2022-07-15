@@ -26,7 +26,7 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	}
 	
 	// 获取新闻渠道
-	let channel: string = await getHashField( DB_KEY.channel, `${ targetId }` );
+	let channel: string = await getHashField( DB_KEY.channel, `${ targetId }` ) || "[]";
 	channel = channel.startsWith( "[" ) ? channel : `["${ channel }"]`;
 	let parse: string[] = JSON.parse( channel );
 	const map = parse.map( value => {

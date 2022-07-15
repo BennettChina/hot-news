@@ -29,6 +29,9 @@ export class HotNewsServiceImpl implements NewsService {
 			const { type, targetId }: ChatInfo = JSON.parse( id );
 			
 			let channel = await getHashField( DB_KEY.channel, `${ targetId }` );
+			if ( !channel ) {
+				continue;
+			}
 			channel = channel.startsWith( "[" ) ? channel : `["${ channel }"]`
 			
 			let channels: string[] = JSON.parse( channel );

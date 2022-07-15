@@ -40,18 +40,19 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	if ( !exist ) {
 		await sendMessage( `[${ targetId }]未订阅[${ channel }]` );
 	} else {
-		let value: string = await redis.getHashField( DB_KEY.channel, `${ targetId }` );
+		let value: string = await redis.getHashField( DB_KEY.channel, `${ targetId }` ) || "[]";
 		value = value.startsWith( "[" ) ? value : `["${ value }"]`;
 		let parse: string[] = JSON.parse( value );
 		if ( !parse.includes( channelKey ) ) {
 			await sendMessage( `[${ targetId }]未订阅[${ channel }]` );
 			return;
 		}
-		const filter = parse.filter( v => v !== channelKey );
-		await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: JSON.stringify( filter ) } );
+		const filter = parse.filter( v => v && v !== channelKey && v !== CHANNEL_NAME.genshin );
 		if ( filter.length === 0 ) {
 			await redis.delSetMember( DB_KEY.ids, member );
 			await redis.delHash( DB_KEY.channel, `${ targetId }` );
+		} else {
+			await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: JSON.stringify( filter ) } );
 		}
 		await sendMessage( `[${ targetId }]已取消订阅[${ channel }]服务` );
 	}

@@ -69,7 +69,7 @@ export async function main( { sendMessage, messageData, redis, logger }: InputPa
 	}
 	
 	// 处理原神B站动态订阅
-	if ( channelKey === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
+	if ( channel === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
 		await biliHandler( targetId, sendMessage, redis, db_data, 401742377, '原神' );
 		return;
 	}
@@ -92,7 +92,7 @@ export async function main( { sendMessage, messageData, redis, logger }: InputPa
 		return;
 	} else {
 		// 处理新闻、摸鱼等订阅
-		let value: string = await redis.getHashField( DB_KEY.channel, `${ targetId }` );
+		let value: string = await redis.getHashField( DB_KEY.channel, `${ targetId }` ) || "[]";
 		value = value.startsWith( "[" ) ? value : `["${ value }"]`;
 		logger.info( `[hot-news]-value:${ value }` );
 		let parse: string[] = JSON.parse( value );
