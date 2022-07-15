@@ -1,21 +1,18 @@
 import { NewsService } from "#hot-news/module/news/NewsService";
-import { getMoyuImg } from "#hot-news/util/api";
 import { segment } from "oicq"
 import bot from "ROOT";
 import { DB_KEY } from "#hot-news/util/constants";
 import { ChatInfo } from "#hot-news/types/type";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { MessageMethod } from "#hot-news/module/message/MessageMethod";
+import { getMoyuUrl } from "#hot-news/util/api";
 
 export class MessAroundServiceImpl implements NewsService {
 	
 	async getInfo( channel?: string ): Promise<string> {
-		const url = await getMoyuImg();
-		if ( url ) {
-			const img = segment.image( url, true, 5000 );
-			return segment.toCqcode( img );
-		}
-		return '未获取到摸鱼日报';
+		const url = getMoyuUrl();
+		const img = segment.image( url, true, 5000 );
+		return segment.toCqcode( img );
 	}
 	
 	async handler(): Promise<void> {

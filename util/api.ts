@@ -3,6 +3,7 @@ import bot from 'ROOT';
 import { formatDate } from "#hot-news/util/tools";
 import { DB_KEY } from "#hot-news/util/constants";
 import { BiliDynamicCard, BiliLiveInfo, News } from "#hot-news/types/type";
+import moment from "moment";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -13,6 +14,7 @@ const API = {
 	biliDynamic: "https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space",
 	biliInfo: 'https://api.bilibili.com/x/space/acc/info',
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
+	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
 }
 
 const NEWS_HEADERS = {
@@ -175,4 +177,9 @@ export async function getMoyuImg(): Promise<string> {
 				}
 			} ).catch( reason => bot.logger.error( reason ) )
 	} );
+}
+
+export function getMoyuUrl(): string {
+	const today: string = moment().format( "yyMMDD" );
+	return API.moyu2.replace( "$", today );
 }
