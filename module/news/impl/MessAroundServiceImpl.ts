@@ -5,14 +5,24 @@ import { DB_KEY } from "#hot-news/util/constants";
 import { ChatInfo } from "#hot-news/types/type";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { MessageMethod } from "#hot-news/module/message/MessageMethod";
-import { getMoyuUrl } from "#hot-news/util/api";
+import { getMoyuImg, getMoyuUrl } from "#hot-news/util/api";
+import { config } from "#hot-news/init";
 
 export class MessAroundServiceImpl implements NewsService {
 	
 	async getInfo( channel?: string ): Promise<string> {
-		const url = getMoyuUrl();
-		const img = segment.image( url, true, 5000 );
-		return segment.toCqcode( img );
+		let url;
+		if ( config.subscribeMoyu.apiType === 1 ) {
+			url = await getMoyuImg();
+		} else {
+			url = getMoyuUrl();
+		}
+		
+		if ( url ) {
+			const img = segment.image( url, true, 5000 );
+			return segment.toCqcode( img );
+		}
+		return '未获取到摸鱼日报';
 	}
 	
 	async handler(): Promise<void> {

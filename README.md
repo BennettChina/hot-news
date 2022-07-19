@@ -111,6 +111,8 @@ errorMsgTemplate: "`[B站] ${name}发布新动态了\\n动态地址：${url}\\n(
 subscribeMoyu:
     enable: false
     cronRule: 0 0 9 * * *
+    # 1代表使用韩小韩的接口，2代表使用"妥妥的"的接口(1仅国内使用，比较稳定；2国内海外都可用，不是很稳定。)
+    apiType: 1
 ```
 
 ### 模版消息配置
@@ -253,6 +255,7 @@ subscribeMoyu:
 ## 感谢
 
 - 感谢 [AnyKnew](https://www.anyknew.com/#/) 站长提供的API
+- 感谢 [韩小韩的API](https://api.vvhan.com/)、 "妥妥的" 的 API 、以及 "摸鱼人日报" 微信公众号提供摸鱼日报。
 
 ## 问题汇总
 
