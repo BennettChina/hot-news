@@ -57,6 +57,5 @@ export const getChannelKey: ( channel: string ) => ( string | number | null ) = 
  * @param ms
  */
 export async function wait( ms ): Promise<void> {
-	return new Promise( () => setTimeout( () => {
-	}, ms ) );
+	return new Promise( resolve => setTimeout( resolve, ms ) );
 }
