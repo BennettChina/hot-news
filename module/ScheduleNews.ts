@@ -17,7 +17,7 @@ import {
 	DynamicInfo
 } from "#hot-news/types/type";
 import NewsConfig from "#hot-news/module/NewsConfig";
-import { formatTimestamp } from "#hot-news/util/tools";
+import { formatTimestamp, wait } from "#hot-news/util/tools";
 import { Order } from "@modules/command";
 import { AuthLevel } from "@modules/management/auth";
 import { ScreenshotService } from "#hot-news/module/screenshot/ScreenshotService";
@@ -144,6 +144,7 @@ export class ScheduleNews {
 				limitMillisecond = parseInt( limit ) * 60 * 60 * 1000;
 			}
 			
+			let i = 0;
 			for ( let card of cards ) {
 				const { name, mid: uid, pub_time, pub_ts } = card.modules.module_author;
 				const {
@@ -164,6 +165,7 @@ export class ScheduleNews {
 				// 专栏类型
 				if ( card.type === 'DYNAMIC_TYPE_ARTICLE' ) {
 					await this.articleHandle( card, chatInfo );
+					i++;
 				} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
 					// 直播动态处理完后直接返回，不需要后续再查询
 					this.bot.logger.info( `[hot-news]--获取到B站${ name }-[${ pub_tss }]发布的新动态[${ card.modules.module_dynamic.desc?.text || "直播推送" }]` );
@@ -180,10 +182,11 @@ export class ScheduleNews {
 							forward_num
 						};
 						await this.normalDynamicHandle( dynamicInfo, chatInfo );
+						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", this.config.biliLiveCacheTime * 60 * 60 );
+						i++;
 					} else {
 						this.bot.logger.info( `[hot-news]--[${ name }]的直播开播消息已推送过了，该直播动态不再推送！` )
 					}
-					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", this.config.biliLiveCacheTime * 60 * 60 );
 				} else if ( card.type === "DYNAMIC_TYPE_AV" ) {
 					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--[${ card.modules.module_dynamic.desc?.text || "投稿视频" }]` );
 					const { archive } = <BiliDynamicMajorArchive>card.modules.module_dynamic.major;
@@ -199,6 +202,7 @@ export class ScheduleNews {
 						archive
 					};
 					await this.normalDynamicHandle( dynamicInfo, chatInfo );
+					i++;
 				} else {
 					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--[${ card.modules.module_dynamic.desc?.text }]` );
 					const dynamicInfo: DynamicInfo = {
@@ -212,10 +216,15 @@ export class ScheduleNews {
 						forward_num
 					};
 					await this.normalDynamicHandle( dynamicInfo, chatInfo );
+					i++;
 				}
 				
 				// 把新的动态ID加入本地数据库
 				await this.bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
+				if ( this.config.pushLimit.enable && i > this.config.pushLimit.limitTimes ) {
+					await wait( this.config.pushLimit.limitTime * 1000 );
+					i = 0;
+				}
 			}
 		}
 	}
@@ -230,6 +239,7 @@ export class ScheduleNews {
 			const uidList: number[] = JSON.parse( uidListStr );
 			
 			// B站直播推送
+			let i = 0;
 			for ( let uid of uidList ) {
 				const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 				if ( !notification_status ) {
@@ -247,7 +257,12 @@ export class ScheduleNews {
 						let msg = eval( this.config.liveTemplate );
 						await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
 						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", cacheTime );
+						i++;
 					}
+				}
+				if ( this.config.pushLimit.enable && i > this.config.pushLimit.limitTimes ) {
+					await wait( this.config.pushLimit.limitTime * 1000 );
+					i = 0;
 				}
 			}
 		}

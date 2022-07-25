@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
 import { formatDate } from "#hot-news/util/tools";
 import { DB_KEY } from "#hot-news/util/constants";
@@ -121,9 +121,14 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, "[]", cache_time );
 				}
 			}
-		} ).catch( reason => {
-			bot.logger.error( reason );
-			resolve( [] );
+		} ).catch( ( reason ): any => {
+			if ( axios.isAxiosError( reason ) ) {
+				let err = <AxiosError>reason;
+				bot.logger.error( `获取B站[${ uid }]动态失败, reason: ${ err.message }` );
+			} else {
+				bot.logger.error( reason );
+			}
+			resolve( [] )
 		} )
 	} );
 }
@@ -153,8 +158,13 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 			if ( !no_cache ) {
 				bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), cache_time );
 			}
-		} ).catch( reason => {
-			bot.logger.error( reason );
+		} ).catch( ( reason ): any => {
+			if ( axios.isAxiosError( reason ) ) {
+				let err = <AxiosError>reason;
+				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason: ${ err.message }` );
+			} else {
+				bot.logger.error( reason );
+			}
 		} )
 	} );
 }
@@ -175,7 +185,14 @@ export async function getMoyuImg(): Promise<string> {
 					resolve( imgUrl );
 					bot.redis.setString( key, imgUrl, 3600 );
 				}
-			} ).catch( reason => bot.logger.error( reason ) )
+			} ).catch( ( reason ): any => {
+			if ( axios.isAxiosError( reason ) ) {
+				let err = <AxiosError>reason;
+				bot.logger.error( `获取摸鱼日报失败, reason: ${ err.message }` );
+			} else {
+				bot.logger.error( reason );
+			}
+		} )
 	} );
 }
 

@@ -31,6 +31,13 @@ export default class NewsConfig {
 		cronRule: string;
 		apiType: number;
 	}
+	/** 消息推送限制配置 */
+	public pushLimit: {
+		enable: boolean;
+		limitTimes: number;
+		limitTime: number;
+	}
+	
 	
 	public static init = {
 		maxSubscribeNum: 5,
@@ -50,6 +57,11 @@ export default class NewsConfig {
 			cronRule: "0 0 9 * * *",
 			apiType: 1
 		},
+		pushLimit: {
+			enable: true,
+			limitTimes: 3,
+			limitTime: 1
+		}
 	};
 	
 	constructor( config: any ) {
@@ -69,6 +81,11 @@ export default class NewsConfig {
 			enable: config.subscribeMoyu.enable,
 			cronRule: config.subscribeMoyu.cronRule,
 			apiType: config.subscribeMoyu.apiType
+		};
+		this.pushLimit = {
+			enable: config.pushLimit.enable,
+			limitTimes: config.pushLimit.limitTimes,
+			limitTime: config.pushLimit.limitTime,
 		};
 	}
 	
@@ -90,6 +107,11 @@ export default class NewsConfig {
 				enable: config.subscribeMoyu.enable,
 				cronRule: config.subscribeMoyu.cronRule,
 				apiType: config.subscribeMoyu.apiType
+			};
+			this.pushLimit = {
+				enable: config.pushLimit.enable,
+				limitTimes: config.pushLimit.limitTimes,
+				limitTime: config.pushLimit.limitTime,
 			};
 			return "hot_news.yml 重新加载完毕";
 		} catch ( error ) {
