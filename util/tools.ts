@@ -140,3 +140,33 @@ export function version_compare( v1, v2 ): number {
 		return ( arr1.length > arr2.length ) ? 1 : -1;
 	}
 }
+
+export function get_uuid(): string {
+	let e = get_part_str( 8 )
+		, t = get_part_str( 4 )
+		, r = get_part_str( 4 )
+		, n = get_part_str( 4 )
+		, o = get_part_str( 12 )
+		, i = ( new Date ).getTime();
+	return e + "-" + t + "-" + r + "-" + n + "-" + o + add_zero_char( ( i % 1e5 ).toString(), 5 ) + "infoc"
+}
+
+function get_part_str( e: number ): string {
+	let t = ""
+	for ( let r = 0; r < e; r++ )
+		t += dec_to_hex( 16 * Math.random() );
+	return add_zero_char( t, e )
+}
+
+function add_zero_char( e: string, t: number ): string {
+	let r = "";
+	if ( e.length < t )
+		for ( let n = 0; n < t - e.length; n++ )
+			r += "0";
+	return r + e
+}
+
+
+function dec_to_hex( e ): string {
+	return Math.ceil( e ).toString( 16 ).toUpperCase()
+}
