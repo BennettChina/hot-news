@@ -194,7 +194,6 @@ export class BiliDynamicImpl implements NewsService {
 			}
 		}
 		await MessageMethod.sendMsg( type, targetId, imgMsg );
-		await wait( 1500 );
 	}
 	
 	private async normalDynamicHandle( {
@@ -285,7 +284,6 @@ export class BiliDynamicImpl implements NewsService {
 			message = MessageMethod.parseTemplate( config.errorMsgTemplate, params );
 		}
 		await MessageMethod.sendMsg( type, targetId, message );
-		await wait( 1500 );
 	}
 	
 	private completeProtocol( base64Str: string ): string {
