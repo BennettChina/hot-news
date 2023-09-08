@@ -300,6 +300,7 @@ interface BiliDynamicModuleDynamic {
 export interface BiliDynamicMajorOpus {
 	type: "MAJOR_TYPE_OPUS";
 	opus: {
+		fold_action: string[];
 		jump_url: string;
 		pics: string[];
 		summary: Summary;

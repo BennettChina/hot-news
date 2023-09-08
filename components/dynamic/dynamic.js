@@ -20,8 +20,10 @@ const template = `<div class="dynamic-main">
 		        <span class="opus-text-rich-hl vote" v-if="item.type === 'RICH_TEXT_NODE_TYPE_VOTE'">{{item.text}}</span>
 		        <span class="opus-text-rich-hl video" v-if="item.type === 'RICH_TEXT_NODE_TYPE_BV'">{{item.text}}</span>
 		        <span class="opus-text-rich-hl video" v-if="item.type === 'RICH_TEXT_NODE_TYPE_AV'">{{item.text}}</span>
+		        <span v-if="item.type === 'RICH_TEXT_NODE_TYPE_OGV_SEASON'" class="opus-text-rich-hl video">{{ item.text }}</span>
 		        <img :alt="item.text" :src="item.emoji.icon_url" class="opus-text-rich-emoji" v-if="item.type === 'RICH_TEXT_NODE_TYPE_EMOJI'">
 		        <img :alt="item.text" :src="item.goods.jump_url" class="opus-text-rich-hl goods" v-if="item.type === 'RICH_TEXT_NODE_TYPE_GOODS'">
+		        <span v-if="item.type === 'RICH_TEXT_NODE_TYPE_MAIL'" style="font-size:17px;">{{ item.text }}</span>
 			</template>
 	   	</p>
 	   <div class="opus-para-pic" v-if="type === 'DYNAMIC_TYPE_DRAW'">
@@ -153,7 +155,14 @@ export default defineComponent( {
 		} );
 		switch ( props.type ) {
 			case 'DYNAMIC_TYPE_DRAW':
-				const drawItems = props.dynamic.major.draw.items;
+				const major = props.dynamic.major;
+				let drawItems;
+				if ( major.type === 'MAJOR_TYPE_OPUS' ) {
+					drawItems = major.opus.pics;
+					state.rich_text_nodes = major.opus.summary.rich_text_nodes;
+				} else {
+					drawItems = major.draw.items;
+				}
 				const count = drawItems.length;
 				switch ( count ) {
 					case 1:
@@ -179,21 +188,19 @@ export default defineComponent( {
 				state.majorItems = drawItems.map( item => {
 					let url;
 					if ( count > 1 ) {
-						url = `${ item.src }@416w_416h_1e_1c.webp`
+						url = `${ item.src || item.url }@416w_416h_1e_1c.webp`
 						return {
-							...item,
 							style: {},
 							url
 						}
 					}
-					url = `${ item.src }@2072w.webp`;
+					url = `${ item.src || item.url }@2072w.webp`;
 					const resolveStyle = getStyle( item.width, item.height );
 					const style = {
 						width: `${ resolveStyle.width }px`,
 						height: `${ resolveStyle.height }px`
 					};
 					return {
-						...item,
 						style,
 						url
 					}
