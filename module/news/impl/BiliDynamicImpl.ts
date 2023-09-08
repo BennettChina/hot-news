@@ -64,11 +64,11 @@ export class BiliDynamicImpl implements NewsService {
 				} = card.modules.module_stat;
 				const pub_tsm: number = pub_ts * 1000;
 				const pub_tss: string = formatTimestamp( pub_tsm );
+				// 把新的动态ID加入本地数据库
+				await bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
 				// 判断动态是否已经过时
 				if ( Date.now() - pub_tsm > limitMillisecond ) {
 					bot.logger.info( `[hot-news] [${ name }]-[${ pub_tss }]发布的动态[${ card.id_str }]已过时不再推送!` )
-					// 把新的动态ID加入本地数据库
-					await bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
 					continue;
 				}
 				
@@ -77,7 +77,7 @@ export class BiliDynamicImpl implements NewsService {
 				
 				// 专栏类型
 				if ( card.type === 'DYNAMIC_TYPE_ARTICLE' ) {
-					await this.articleHandle( card, chatInfo );
+					this.articleHandle( card, chatInfo ).then();
 					i++;
 				} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
 					// do nothing
@@ -95,7 +95,7 @@ export class BiliDynamicImpl implements NewsService {
 						forward_num,
 						archive
 					};
-					await this.normalDynamicHandle( dynamicInfo, chatInfo );
+					this.normalDynamicHandle( dynamicInfo, chatInfo ).then();
 					i++;
 				} else {
 					bot.logger.info( `[hot-news] 获取到B站[${ name }]-[${ pub_tss }]发布的新动态 [${ card.id_str }] [${ card.modules.module_dynamic.desc?.text }]` );
@@ -109,12 +109,10 @@ export class BiliDynamicImpl implements NewsService {
 						comment_num,
 						forward_num
 					};
-					await this.normalDynamicHandle( dynamicInfo, chatInfo );
+					this.normalDynamicHandle( dynamicInfo, chatInfo ).then();
 					i++;
 				}
-				
-				// 把新的动态ID加入本地数据库
-				await bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
+				await wait( 1500 );
 			}
 			
 			if ( config.pushLimit.enable && i > config.pushLimit.limitTimes ) {
