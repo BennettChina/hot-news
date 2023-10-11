@@ -4390,7 +4390,21 @@ pre[id].linkable-line-numbers span.line-numbers-rows > span:hover:before {
 
 .article-content {
 	/*padding: 0 80px;*/
-	margin-bottom: 50px
+	margin-bottom: 50px;
+	color: #18191c;
+}
+
+.article-content p {
+	line-height: 1.69em;
+	white-space: pre-wrap;
+	word-break: break-word;
+	margin: 0;
+	padding: 0;
+	display: block;
+	margin-block-start: 1em;
+	margin-block-end: 1em;
+	margin-inline-start: 0;
+	margin-inline-end: 0;
 }
 
 .article-content .view-note .ql-editor {
