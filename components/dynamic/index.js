@@ -7,10 +7,14 @@ const template = `
 </template>
 <template v-else>
 	<div style="margin: 20px; border-radius: 10px; border: 1px solid transparent;">
+		<div class="opus-module-title" v-if="title">
+			<span>{{title}}</span>
+		</div>
 		<Header v-bind="author"/>
 		<Dynamic :dynamic="dynamic" :type="type">
 			<div v-if="type === 'DYNAMIC_TYPE_FORWARD'" class="bili-dyn-content__orig reference">
 				<Face v-bind="face"/>
+				<div class="dyn-card-opus__title bili-ellipsis" v-if="origTitle" style="padding-top: 10px;">{{origTitle}}</div>
 				<Dynamic :dynamic="orig.modules.module_dynamic" :type="orig.type"/>
 			</div>
 		</Dynamic>
@@ -53,7 +57,9 @@ export default defineComponent( {
 				nicknameColor: ""
 			},
 			articleHtml: "",
-			stat: {}
+			stat: {},
+			title: "",
+			origTitle: ""
 		} );
 		const urlParams = parseURL( location.search );
 		const data = request( `/api/dynamic?dynamicId=${ urlParams.dynamicId }` );
@@ -78,6 +84,12 @@ export default defineComponent( {
 			state.face.avatar = data.orig.modules.module_author.face;
 			state.face.name = data.orig.modules.module_author.name;
 			state.face.nicknameColor = data.orig.modules.module_author.vip.nickname_color;
+			if ( data.orig.type === 'DYNAMIC_TYPE_WORD' || data.orig.type === 'DYNAMIC_TYPE_DRAW' ) {
+				state.origTitle = data.orig.modules.module_dynamic?.major?.opus?.title;
+			}
+		}
+		if ( data.type === 'DYNAMIC_TYPE_WORD' || data.type === 'DYNAMIC_TYPE_DRAW' ) {
+			state.title = state.dynamic?.major?.opus?.title;
 		}
 		return { ...toRefs( state ) }
 	}

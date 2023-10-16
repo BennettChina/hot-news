@@ -22,7 +22,7 @@ const template = `<div class="dynamic-main">
 		        <span class="opus-text-rich-hl video" v-if="item.type === 'RICH_TEXT_NODE_TYPE_AV'">{{item.text}}</span>
 		        <span v-if="item.type === 'RICH_TEXT_NODE_TYPE_OGV_SEASON'" class="opus-text-rich-hl video">{{ item.text }}</span>
 		        <img :alt="item.text" :src="item.emoji.icon_url" class="opus-text-rich-emoji" v-if="item.type === 'RICH_TEXT_NODE_TYPE_EMOJI'">
-		        <img :alt="item.text" :src="item.goods.jump_url" class="opus-text-rich-hl goods" v-if="item.type === 'RICH_TEXT_NODE_TYPE_GOODS'">
+		        <span class="opus-text-rich-hl goods" v-if="item.type === 'RICH_TEXT_NODE_TYPE_GOODS'">{{ item.text }}}</span>
 		        <span v-if="item.type === 'RICH_TEXT_NODE_TYPE_MAIL'" style="font-size:17px;">{{ item.text }}</span>
 			</template>
 	   	</p>
@@ -242,6 +242,12 @@ export default defineComponent( {
 						webp: `${ props.dynamic.major.live.cover }@472w_264h_1c_!web-dynamic.webp`
 					}
 				};
+				break;
+			case 'DYNAMIC_TYPE_WORD':
+				const maj = props.dynamic.major;
+				if ( maj.type === 'MAJOR_TYPE_OPUS' ) {
+					state.rich_text_nodes = maj.opus.summary.rich_text_nodes;
+				}
 				break;
 		}
 		return { ...toRefs( state ) };
