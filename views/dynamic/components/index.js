@@ -6,7 +6,7 @@ const template = `
 	<Video :dynamic="dynamic" :type="type" :author="author" :url="url" :stat="stat"></Video>
 </template>
 <template v-else>
-	<div style="margin: 20px; border-radius: 10px; border: 1px solid transparent;">
+	<div style="margin: 20px 20px 50px; border-radius: 10px; border: 1px solid transparent;">
 		<div class="opus-module-title" v-if="title">
 			<span>{{title}}</span>
 		</div>
@@ -18,8 +18,8 @@ const template = `
 				<Dynamic :dynamic="orig.modules.module_dynamic" :type="orig.type"/>
 			</div>
 		</Dynamic>
-		<QRCode :url="url"/>
 	</div>
+	<QRCode :url="url"/>
 </template>
 `;
 

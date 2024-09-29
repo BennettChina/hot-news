@@ -1,19 +1,19 @@
 const template = `<div class="qrcode_main">
 <div class="left">
-	<img src="/hot-news/assets/img/bili_column_icon_bilibili.png" alt="logo"/>
+	<img src="/hot-news/assets/img/bili_logo.png" alt="logo" class="bili_logo"/>
 	<div>
-		<p style="color: #40171C">识别图中二维码，查看全文</p>
-		<p style="color: #40171C">图片生成于：{{create_time}}</p>
+		<p style="font-size: 18px;">长按识别二维码即可查看全文</p>
+		<p>分享于 {{create_time}}</p>
 	</div>
 </div>
 <div class="right">
-	<div ref="qrcode" style="padding: 5px"></div>
+	<div ref="qrcode" class="qrcode"></div>
 </div>
 </div>`
 
 import { toHumanize } from "../assets/js/utils.js";
 
-const { defineComponent, ref, onMounted } = Vue;
+const { defineComponent, ref, onMounted, computed } = Vue;
 
 export default defineComponent( {
 	name: "QRCode",
@@ -27,13 +27,15 @@ export default defineComponent( {
 	},
 	setup( props ) {
 		const qrcode = ref( null );
-		const date = new Date();
-		const create_time = ref( toHumanize( date.getTime() / 1000 | 0, 2 ) );
+		const create_time = computed( () => {
+			const timestamp = Date.now();
+			return toHumanize( timestamp, 3 );
+		} );
 		onMounted( () => {
 			new QRCode( qrcode.value, {
 				text: props.url,
-				width: 100,
-				height: 100,
+				width: 80,
+				height: 80,
 				colorDark: '#000000',
 				colorLight: '#ffffff',
 				correctLevel: QRCode.CorrectLevel.H,

@@ -6,12 +6,24 @@
 	justify-content: space-between;
 	align-items: center;
 	padding: 15px 30px;
-	background: url("../img/ic_bili_column_background_screen_shot_bottom.png");
+	background: var(--Ga0);
+}
+
+.bili_logo {
+	width: 90px;
 }
 
 .qrcode_main p {
-	margin-top: 5px;
-	margin-bottom: 0;
+	margin: 15px 0 0;
+	color: var(--Ga6);
+	font-weight: bold;
+}
+
+.qrcode {
+	padding: 10px;
+	border-radius: 10px;
+	border: 1px solid var(--Ga3);
+	background-color: var(--Wh0);
 }
 
 /*---------- video_qrcode css ------------*/
