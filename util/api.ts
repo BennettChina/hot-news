@@ -248,7 +248,7 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 		host_mid: uid,
 		timezone_offset: -480,
 		platform: 'web',
-		features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote",
+		features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote,decorationCard,forwardListHidden,ugcDelete,onlyfansQaCard",
 		web_location: "333.999",
 		...getDmImg(),
 		"x-bili-device-req-json": { "platform": "web", "device": "pc" },

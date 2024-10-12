@@ -19,7 +19,7 @@ export default defineDirective( "enquire", async ( {
 			'这可能会在部分服务中产生日志信息，造成个人隐私泄漏，请您在使用时慎重考虑。以及本服务通过 SmsForwarder App 实现，' +
 			'请先访问该在线文档 https://gitee.com/pp/SmsForwarder/wikis/pages 了解该 App 后再考虑是否使用本服务。' +
 			'如仍要继续，请输入「确认」 ，可输入「取消」退出本次服务，或等待 1 分钟后自动退出。' );
-		return false;
+		return;
 	}
 	
 	if ( matchResult.status === "confirm" ) {
