@@ -15,8 +15,17 @@
 	border: 1px solid #dadada;
 }
 
-header > img {
-	width: 100%;
+header {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 300px;
+	background-color: var(--banner-color);
+}
+
+header > h3 {
+	font-size: 86px;
+	color: #fff;
 }
 
 main {

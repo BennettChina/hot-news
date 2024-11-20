@@ -849,7 +849,11 @@ export interface BiliUser {
 
 export type SixtyNews = {
 	title: string;
-	banner: string;
-	time: string;
+	time: {
+		date: string;
+		week: string;
+		lunar: string;
+	},
 	data: string[];
+	sentence: string;
 }

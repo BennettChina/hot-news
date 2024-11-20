@@ -40,6 +40,7 @@ const API = {
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
 	"60s": 'https://www.zhihu.com/api/v4/columns/c_1715391799055720448/items?limit=2',
+	"60s2": 'https://api.adachi.work/60s',
 	biliCard: "https://api.bilibili.com/x/web-interface/card",
 	biliStat: "https://api.bilibili.com/x/relation/stat",
 	biliLiveUserInfo: "https://api.live.bilibili.com/live_user/v1/Master/info",
@@ -575,40 +576,26 @@ export function getMoyuUrl(): string {
 
 // 存储当日 60s 新闻
 export async function set60s(): Promise<boolean> {
-	const todayStr = moment().format( "MM月DD日" );
-	let key = `${ DB_KEY["60s_img_data_key"] }.${ moment().format( "yyyyMMDD" ) }`;
+	let key = `${ DB_KEY["60s_img_data_key"] }.${ moment().format( "YYYYMMDD" ) }`;
 	
 	const cache = await bot.redis.getString( key );
 	if ( isJsonString( cache ) ) return true;
 	
 	try {
-		const response = await axios.get( API["60s"] );
-		const data = response.data.data || [];
-		const { content = '', title_image = '', updated = 0 } = data[0];
-		// 不是今天的新闻就不再处理了
-		if ( !moment( updated * 1000 ).isSame( Date.now(), 'day' ) ) {
+		const response = await axios.get( API["60s2"] );
+		const { title = '', time = '', data = [], sentence = '' } = response.data || {};
+		// 拆分 公历、周几、农历
+		const [ date = "", week = "", lunar = "" ] = time.split( ' ' );
+		// 不是今天的新闻(第二天am4:00之前)就不再处理了
+		if ( date !== moment().subtract( 4, "h" ).format( "YYYY年M月D日" ) ) {
 			return false;
 		}
-		// copy from https://github.com/vikiboss/60s/blob/main/src/services/60s.ts
-		const reg = /<p\s+data-pid=[^<>]+>([^<>]+)<\/p>/g;
-		const tagReg = /<[^<>]+>/g;
-		const contents: string[] = content.match( reg ) ?? [];
-		const mapFn = ( e: string ) => transferText( e.replace( tagReg, '' ).trim(), 'a2u' );
-		const result = contents.map( mapFn );
-		if ( !result.length ) return false;
-		
-		const news = ( result || [] ).map( ( e ) => {
-			return e
-				.replace( /^\d+、\s*/g, '' )
-				.replace( /。$/, '' )
-				.trim()
-		} )
 		
 		const sixtyNews: SixtyNews = {
-			title: "在这里每天60秒读懂世界",
-			banner: title_image,
-			time: todayStr,
-			data: news
+			title,
+			time: { date, week, lunar },
+			data,
+			sentence
 		};
 		
 		await bot.redis.setString( key, JSON.stringify( sixtyNews ), 3600 );
