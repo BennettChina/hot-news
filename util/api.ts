@@ -40,6 +40,7 @@ const API = {
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
 	"60s": 'https://www.zhihu.com/api/v4/columns/c_1715391799055720448/items?limit=2',
+	"60s_api": "https://60s.viki.moe/60s?v2=1",
 	biliCard: "https://api.bilibili.com/x/web-interface/card",
 	biliStat: "https://api.bilibili.com/x/relation/stat",
 	biliLiveUserInfo: "https://api.live.bilibili.com/live_user/v1/Master/info",
@@ -573,7 +574,10 @@ export function getMoyuUrl(): string {
 	return API.moyu2.replace( "$", today );
 }
 
-// 存储当日 60s 新闻
+/**
+ * @description 存储当日 60s 新闻
+ * @deprecated need user cookie
+ */
 export async function set60s(): Promise<boolean> {
 	const todayStr = moment().format( "MM月DD日" );
 	let key = `${ DB_KEY["60s_img_data_key"] }.${ moment().format( "yyyyMMDD" ) }`;
@@ -582,7 +586,11 @@ export async function set60s(): Promise<boolean> {
 	if ( isJsonString( cache ) ) return true;
 	
 	try {
-		const response = await axios.get( API["60s"] );
+		const response = await axios.get( API["60s"], {
+			headers: {
+				"User-Agent": userAgent.toString()
+			}
+		} );
 		const data = response.data.data || [];
 		const { content = '', title_image = '', updated = 0 } = data[0];
 		// 不是今天的新闻就不再处理了
@@ -621,6 +629,35 @@ export async function set60s(): Promise<boolean> {
 			throw new Error( `[hot-news] - 获取60秒新闻图失败, reason: ${ reason }` );
 		}
 	}
+}
+
+export async function set60sFromApi( api: string = API["60s_api"] ): Promise<boolean> {
+	const todayStr = moment().format( "MM月DD日" );
+	let key = `${ DB_KEY["60s_img_data_key"] }.${ moment().format( "yyyyMMDD" ) }`;
+	
+	const cache = await bot.redis.getString( key );
+	if ( isJsonString( cache ) ) return true;
+	
+	const response = await axios.get( api )
+		.catch( ( reason: AxiosError ) => {
+			throw new Error( reason.message );
+		} );
+	if ( response.data.status !== 200 ) {
+		throw new Error( response.data.message );
+	}
+	
+	const { news, tip, cover } = response.data.data;
+	
+	const sixtyNews: SixtyNews = {
+		title: "在这里每天60秒读懂世界",
+		banner: cover,
+		time: todayStr,
+		data: news,
+		tip
+	};
+	
+	await bot.redis.setString( key, JSON.stringify( sixtyNews ), 3600 );
+	return true;
 }
 
 export async function getUpInfoFromArticle( uid: number, jump_url: string ): Promise<UpCardInfo | undefined> {

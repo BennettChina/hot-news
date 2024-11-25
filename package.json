@@ -3,7 +3,7 @@
   "private" : true,
   "author" : "Bennett",
   "description" : "消息推送服务插件",
-  "version" : "2.2.2",
+  "version" : "2.2.3",
   "dependencies" : {
     "gm-crypto" : "^0.1.12",
     "user-agents" : "^1.1.239",

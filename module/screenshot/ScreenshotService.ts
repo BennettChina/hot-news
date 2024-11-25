@@ -1,6 +1,7 @@
 import { Page, ScreenshotOptions } from "puppeteer";
 import bot from "ROOT";
 import { getVersion, version_compare } from "#/hot-news/util/tools";
+import { sleep } from "@/utils/async";
 
 export class ScreenshotService {
 	
@@ -46,7 +47,7 @@ export class ScreenshotService {
 		element = await page.$( ".card" );
 		if ( !element ) {
 			// 如果没有这个元素再等3秒，还没有就不管了。
-			await page.waitForTimeout( 3000 );
+			await sleep( 3000 );
 		}
 		let card = await page.waitForSelector( ".card" );
 		let clip = await card?.boundingBox();

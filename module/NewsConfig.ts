@@ -56,6 +56,11 @@ export interface INewsConfig {
 	 * 开启 webhook 使用的域名/IP
 	 */
 	apiDomain: string;
+	
+	/**
+	 * 60秒新闻的API
+	 */
+	sixtyApi: string;
 }
 
 export default class NewsConfig implements INewsConfig {
@@ -137,12 +142,15 @@ export default class NewsConfig implements INewsConfig {
 		filterContent: "恭喜.*中奖",
 		filterDynamicType: [],
 		cookie: "",
-		apiDomain: ""
+		apiDomain: "",
+		sixtyApi: "",
 	};
 	/**
 	 * 开启 webhook 使用的域名/IP
 	 */
 	public apiDomain: string;
+	
+	public sixtyApi: string;
 	
 	constructor( config: any ) {
 		this.maxSubscribeNum = config.maxSubscribeNum;
@@ -172,5 +180,6 @@ export default class NewsConfig implements INewsConfig {
 		this.filterDynamicType = config.filterDynamicType;
 		this.cookie = config.cookie;
 		this.apiDomain = config.apiDomain;
+		this.sixtyApi = config.sixtyApi;
 	}
 }

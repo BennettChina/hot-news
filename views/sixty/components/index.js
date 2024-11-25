@@ -14,9 +14,10 @@ const template = `<div class="container">
 		</div>
 		<ul class="content">
 			<li v-for="( item, key ) of data" :key="key">
-				<span v-if="key !== data.length - 1">{{ key + 1 }}、 </span>
+				<span>{{ key + 1 }}、 </span>
 				<span>{{ item }}</span>
 			</li>
+			<span v-if="tip">【微语】{{ tip }}</span>
 		</ul>
 	</main>
 </div>`;
@@ -32,13 +33,14 @@ export default defineComponent( {
 			banner: "",
 			title: "",
 			time: "",
-			data: []
+			data: [],
+			tip: ""
 		} );
-
+		
 		onMounted( async () => {
 			await getData();
 		} )
-
+		
 		async function getData() {
 			const res = await fetch( "/hot-news/api/sixty" );
 			const data = await res.json();
@@ -46,8 +48,9 @@ export default defineComponent( {
 			state.title = data.title || "在这里每天60秒读懂世界"
 			state.time = data.time || ""
 			state.data = data.data || []
+			state.tip = data.tip ?? ""
 		}
-
+		
 		return {
 			...toRefs( state )
 		}

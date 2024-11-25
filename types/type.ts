@@ -852,4 +852,5 @@ export type SixtyNews = {
 	banner: string;
 	time: string;
 	data: string[];
+	tip?: string;
 }

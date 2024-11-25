@@ -121,8 +121,7 @@ export const getDmImg = (): DmImg => {
 	// const dm_cover_img_str = randomSample( dm_rand, 2 );
 	// 这俩值可以不用随机，直接用实际的真实值即可。
 	const dm_img_str = "V2ViR0wgMS4wIChPcGVuR0wgRVMgMi4wIENocm9taXVtKQ";// base64Decode = WebGL 1.0 (OpenGL ES 2.0 Chromium)
-	const dm_cover_img_str = "QU5HTEUgKEludGVsIEluYy4sIEludGVsKFIpIFVIRCBHcmFwaGljcyA2Mz" +
-		"AsIE9wZW5HTCA0LjEpR29vZ2xlIEluYy4gKEludGVsIEluYy";// base64Decode = ANGLE (Intel Inc., Intel(R) UHD Graphics 630, OpenGL 4.1)Google Inc. (Intel Inc
+	const dm_cover_img_str = "QU5HTEUgKEludGVsLCBBTkdMRSBNZXRhbCBSZW5kZXJlcjogSW50ZWwoUikgVUhEIEdyYXBoaWNzIDYzMCwgVW5zcGVjaWZpZWQgVmVyc2lvbilHb29nbGUgSW5jLiAoSW50ZW";// base64Decode = ANGLE (Intel Inc., Intel(R) UHD Graphics 630, OpenGL 4.1)Google Inc. (Intel Inc
 	const dm_img_inter = { ds: [], wh: [ 0, 0, 0 ], of: [ 0, 0, 0 ] };
 	return {
 		dm_img_list,
