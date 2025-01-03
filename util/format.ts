@@ -19,3 +19,25 @@ export function getTargetQQMap<T>( subs: Record<string, string>, format?: ( subS
 
 	return target_qq_map;
 }
+
+export function transformCookie( cookie: string ): Record<string, string>;
+
+export function transformCookie( cookie: Record<string, string> ): string;
+
+export function transformCookie( cookie: string | Record<string, string> ): Record<string, string> | string {
+	if ( typeof cookie === "string" ) {
+		return decodeURIComponent( cookie ).split( ";" )
+			.filter( item => !!item && item.trim().length > 0 )
+			.reduce( ( acc, item ) => {
+				const delimiter = item.indexOf( '=' );
+				const key = item.substring( 0, delimiter ).trim();
+				acc[key] = item.substring( delimiter + 1 ).trim();
+				return acc;
+			}, {} );
+	}
+	return Object.entries( cookie )
+		.map( ( [ k, v ] ) => {
+			return `${ k }=${ v }`;
+		} )
+		.join( ";" );
+}

@@ -11,6 +11,7 @@ import {
 } from "#/hot-news/util/tools";
 import { DB_KEY } from "#/hot-news/util/constants";
 import {
+	BiliBiliHeader,
 	BiliDynamicCard,
 	BiliLiveInfo,
 	BiliOpusDetail,
@@ -27,6 +28,8 @@ import UserAgent from 'user-agents';
 import { gen_buvid_fp } from "#/hot-news/util/fp";
 import { encWbi, getDmImg, getWbiSign } from "#/hot-news/util/wbi";
 import { isJsonString } from "@/utils/verify";
+import { getBiliTicket } from "#/hot-news/util/ticket";
+import { transformCookie } from "#/hot-news/util/format";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -56,9 +59,16 @@ const NEWS_HEADERS = {
 	"Connection": "keep-alive",
 };
 
-const BILIBILI_DYNAMIC_HEADERS = {
+const BILIBILI_DYNAMIC_HEADERS: BiliBiliHeader = {
 	"Origin": "https://space.bilibili.com",
 	"Referer": "https://space.bilibili.com/$/dynamic",
+	"User-Agent": "Mozilla/5.0",
+	"Cookie": ""
+}
+
+const BILIBILI_SEARCH_HEADES: BiliBiliHeader = {
+	"Origin": "https://search.bilibili.com",
+	"Referer": "https://search.bilibili.com/all?keywords=",
 	"User-Agent": "Mozilla/5.0",
 	"Cookie": ""
 }
@@ -122,25 +132,43 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 /**
  * 获取B站指纹Cookie
  */
-async function getCookies( uuid: string ): Promise<void> {
-	BILIBILI_DYNAMIC_HEADERS.Cookie = `_uuid=${ uuid }`
+async function getCookies( uuid: string, headers: BiliBiliHeader ): Promise<void> {
+	const cookie = transformCookie( headers.Cookie );
+	headers.Cookie = `_uuid=${ uuid }`;
 	const resp = await axios.get( `https://api.bilibili.com/x/frontend/finger/spi`, {
-		headers: BILIBILI_DYNAMIC_HEADERS
+		headers
 	} );
 	if ( resp.data.code !== 0 ) {
 		bot.logger.error( `[hot-news] 获取B站指纹出错:`, resp.data );
 		return;
 	}
-	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid3=${ resp.data.data["b_3"] };buvid4=${ resp.data.data["b_4"] }`;
+	try {
+		const { ticket, created_at, ttl } = await getBiliTicket( headers["User-Agent"] );
+		const expires_at: number = created_at + ttl;
+		headers.Cookie = transformCookie( {
+			...cookie,
+			buvid3: resp.data.data["b_3"],
+			buvid4: resp.data.data["b_4"],
+			bili_ticket: ticket,
+			bili_ticket_expires: `${ expires_at }`
+		} );
+	} catch ( error ) {
+		bot.logger.error( "[hot-news] 获取B站 ticket 出错:", error );
+		headers.Cookie = transformCookie( {
+			...cookie,
+			buvid3: resp.data.data["b_3"],
+			buvid4: resp.data.data["b_4"],
+		} );
+	}
 }
 
 function boolToNum( bool: boolean ) {
 	return bool ? 1 : 0;
 }
 
-async function abtest_info( uid: number ): Promise<string> {
+async function abtest_info( referer: string ): Promise<string> {
 	try {
-		const response = await axios.get( `https://space.bilibili.com/${ uid }/dynamic` );
+		const response = await axios.get( referer );
 		const regex = /<script\s+id="abtest"\s*[^>]*>([\s\S]*?)<\/script>/i;
 		const matches = regex.exec( response.data );
 		if ( matches ) {
@@ -159,13 +187,13 @@ async function abtest_info( uid: number ): Promise<string> {
 	}
 }
 
-async function gen_payload( uid: number, randomUA: UserAgent, uuid: string ) {
-	const ua = BILIBILI_DYNAMIC_HEADERS["User-Agent"];
+async function gen_payload( randomUA: UserAgent, uuid: string, headers: BiliBiliHeader ) {
+	const ua = randomUA.toString();
 	const { screenWidth, screenHeight, viewportHeight, viewportWidth } = randomUA.data;
 	const data = {
 		"3064": 1,
 		"5062": `${ Date.now() }`,
-		"03bf": `https%3A%2F%2Fspace.bilibili.com%2F${ uid }%2Fdynamic`,
+		"03bf": `${ encodeURIComponent( headers.Referer ) }`,
 		"39c8": "333.999.fp.risk",
 		"34f1": "",
 		"d402": "",
@@ -203,7 +231,7 @@ async function gen_payload( uid: number, randomUA: UserAgent, uuid: string ) {
 			"a658": [ "Andale Mono", "Arial", "Arial Black", "Arial Hebrew", "Arial Narrow", "Arial Rounded MT Bold", "Arial Unicode MS", "Comic Sans MS", "Courier", "Courier New", "Geneva", "Georgia", "Helvetica", "Helvetica Neue", "Impact", "LUCIDA GRANDE", "Microsoft Sans Serif", "Monaco", "Palatino", "Tahoma", "Times", "Times New Roman", "Trebuchet MS", "Verdana", "Wingdings", "Wingdings 2", "Wingdings 3" ],
 			"d02f": random_audio()
 		},
-		"54ef": await abtest_info( uid ),
+		"54ef": await abtest_info( headers.Referer ),
 		"8b94": "",
 		"df35": uuid,
 		"07a4": "zh-CN",
@@ -216,18 +244,22 @@ async function gen_payload( uid: number, randomUA: UserAgent, uuid: string ) {
 /**
  * 上报并激活指纹Cookie
  */
-async function submitGateway( uid: number, randomUA: UserAgent, uuid: string ): Promise<void> {
+async function submitGateway( randomUA: UserAgent, uuid: string, headers: BiliBiliHeader ): Promise<void> {
 	// 如果已经生成的有就一直用，初次会 -352 ，后续就可正常使用，且该 cookie 值服务端会自动续期
 	if ( !fp.buvid_fp ) {
-		const payload = await gen_payload( uid, randomUA, uuid );
+		const payload = await gen_payload( randomUA, uuid, headers );
 		fp.buvid_fp = gen_buvid_fp( payload, 31 );
 		fp.payload = payload;
 	}
-	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid_fp=${ fp.buvid_fp }`
+	const cookie = transformCookie( headers.Cookie );
+	headers.Cookie = transformCookie( {
+		...cookie,
+		buvid_fp: fp.buvid_fp
+	} )
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
 		payload: fp.payload
 	}, {
-		headers: BILIBILI_DYNAMIC_HEADERS
+		headers
 	} )
 }
 
@@ -238,8 +270,8 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 	// 获取Cookie
 	if ( !config.cookie ) {
 		const uuid = get_uuid();
-		await getCookies( uuid );
-		await submitGateway( uid, userAgent, uuid );
+		await getCookies( uuid, BILIBILI_DYNAMIC_HEADERS );
+		await submitGateway( userAgent, uuid, BILIBILI_DYNAMIC_HEADERS );
 	} else {
 		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	}
@@ -364,80 +396,6 @@ export async function getBiliDynamicNew( uid: number ): Promise<BiliDynamicCard[
 		}
 		return [];
 	}
-}
-
-/**
- * @deprecated
- * @param uid 订阅的uid
- * @param no_cache 是否用缓存
- * @param cache_time 缓存时间
- */
-export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliLiveInfo> = async ( uid, no_cache = false, cache_time = 60 ) => {
-	//region 折叠这部分代码，该接口需要经常调整，暂时不维护，目前有其他接口可以获取直播间信息
-	const live_info = await bot.redis.getString( `${ DB_KEY.bili_live_info_key }.${ uid }` );
-	if ( live_info ) {
-		return Promise.resolve( JSON.parse( live_info ) );
-	}
-	
-	BILIBILI_DYNAMIC_HEADERS.Referer = `https://space.bilibili.com/${ uid }`;
-	return new Promise( ( resolve ) => {
-		axios.get( API.biliInfo, {
-			params: {
-				mid: uid,
-				jsonp: 'jsonp',
-				platform: 'web',
-				token: ''
-			},
-			headers: BILIBILI_DYNAMIC_HEADERS,
-			timeout: 5000
-		} ).then( r => {
-			if ( r.data.code !== 0 ) {
-				bot.logger.error( `获取B站[${ uid }]个人信息失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
-				return;
-			}
-			
-			const { name, live_room } = r.data.data;
-			const info = { name, liveRoom: live_room };
-			info.liveRoom.live_time = 0;
-			resolve( info );
-			if ( !no_cache ) {
-				bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), cache_time );
-			}
-		} ).catch( ( reason ): any => {
-			if ( axios.isAxiosError( reason ) ) {
-				let err = <AxiosError>reason;
-				bot.logger.error( `获取B站[${ uid }]个人信息失败(axiosError), reason: ${ err.message }` );
-			} else {
-				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason:`, reason );
-			}
-			const info = {
-				liveRoom: {
-					liveStatus: -1,
-					roomStatus: 1,
-					title: "",
-					url: `https://live.bilibili.com/`,
-					cover: "",
-					live_time: 0,
-					watched_show: {
-						switch: true,
-						num: 0,
-						text_small: "",
-						text_large: ""
-					},
-					room_id: 0,
-					short_id: 0,
-					area_name: '',
-					area_v2_name: '',
-					area_v2_parent_name: '',
-					face: '',
-					tag_name: ''
-				},
-				name: uid.toString( 10 )
-			}
-			resolve( info );
-		} )
-	} );
-	//endregion
 }
 
 export async function batchGetBiliUserNames( uids: number[] ) {
@@ -752,15 +710,14 @@ export async function getLiveUserInfo( uid: number ): Promise<LiveUserInfo | und
 	}
 }
 
-async function getHomeCookie() {
-	const response = await axios.get( "https://bilibili.com/" );
-	return response.headers['set-cookie']!.map( item => {
-		return item.split( ';' )[0]
-	} ).join( ";" )
-}
-
 export async function searchBili( keyword: string, search_type: string = "bili_user" ) {
-	const cookie = await getHomeCookie();
+	BILIBILI_SEARCH_HEADES["User-Agent"] = userAgent.toString();
+	const referer = new URL( BILIBILI_SEARCH_HEADES.Referer );
+	referer.searchParams.set( "keywords", keyword );
+	BILIBILI_SEARCH_HEADES.Referer = referer.toString();
+	const uuid = get_uuid();
+	await getCookies( uuid, BILIBILI_SEARCH_HEADES );
+	await submitGateway( userAgent, uuid, BILIBILI_SEARCH_HEADES );
 	const data = {
 		keyword,
 		search_type,
@@ -795,10 +752,7 @@ export async function searchBili( keyword: string, search_type: string = "bili_u
 			wts,
 			w_rid
 		},
-		headers: {
-			'User-Agent': userAgent.random().toString(),
-			'Cookie': cookie
-		}
+		headers: BILIBILI_SEARCH_HEADES
 	} );
 	if ( response.data.code !== 0 ) {
 		return Promise.reject( response.data.message );

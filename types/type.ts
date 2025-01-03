@@ -854,3 +854,10 @@ export type SixtyNews = {
 	data: string[];
 	tip?: string;
 }
+
+export interface BiliBiliHeader extends Record<string, string> {
+	Origin: string;
+	Referer: string;
+	"User-Agent": string;
+	Cookie: string;
+}

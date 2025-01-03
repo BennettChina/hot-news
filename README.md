@@ -14,7 +14,7 @@ git clone https://github.com/BennettChina/hot-news.git
 ### 网差用这两个
 
 ```shell
-git clone https://mirror.ghproxy.com/https://github.com/BennettChina/hot-news.git
+git clone https://gh-proxy.com/https://github.com/BennettChina/hot-news.git
 ```
 
 需要注意的时 `GitClone` 镜像同步比较慢(夜间同步)，因此如果 `pull` 时未拉取到内容可将插件删掉用 `Ghproxy` 重新克隆。
@@ -23,7 +23,7 @@ git clone https://mirror.ghproxy.com/https://github.com/BennettChina/hot-news.gi
 git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 ```
 
-> 感谢[GitClone](https://gitclone.com/) 和 [GitHub Proxy](https://mirror.ghproxy.com/) 提供的镜像服务！
+> 感谢[GitClone](https://gitclone.com/) 和 [GitHub Proxy](https://gh-proxy.com/) 提供的镜像服务！
 
 ## 使用方法
 
@@ -329,6 +329,8 @@ apiDomain: ""
 
 - 感谢 [AnyKnew](https://www.anyknew.com/#/) 站长提供的API
 - 感谢 [韩小韩的API](https://api.vvhan.com/)、 "妥妥的" 的 API 、以及 "摸鱼人日报" 微信公众号提供摸鱼日报。
+- 感谢 [SocialSisterYi](https://github.com/SocialSisterYi)
+  的 [哔哩哔哩 - API 收集整理](https://github.com/SocialSisterYi/bilibili-API-collect) 项目
 
 ## 问题汇总
 
