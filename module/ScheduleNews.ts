@@ -8,6 +8,8 @@ import { INewsConfig } from "#/hot-news/module/NewsConfig";
 import { getRandomNumber } from "@/utils/random";
 import { sleep } from "@/utils/async";
 import bot from "ROOT";
+import { RetryError } from "#/hot-news/util/retry-error";
+import { wait } from "#/hot-news/util/tools";
 
 export class ScheduleNews {
 	private readonly bot: BOT;
@@ -50,6 +52,18 @@ export class ScheduleNews {
 				} );
 				NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler().then( () => {
 					this.bot.logger.debug( "[hot-news] 60s新闻定时任务已处理完成." );
+				} ).catch( async ( err ) => {
+					if ( err instanceof RetryError ) {
+						this.bot.logger.warn( "[hot-news]", err.message, "将在 30 分钟后重试。" );
+						try {
+							await wait( 30 * 60 * 1000 );
+							await NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler();
+						} catch ( e ) {
+							this.bot.logger.error( "[hot-news] [60s新闻]", e );
+						}
+						return;
+					}
+					this.bot.logger.error( "[hot-news] [60s新闻]", err );
 				} );
 				job.cancel();
 			} );

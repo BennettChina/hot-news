@@ -30,6 +30,7 @@ import { encWbi, getDmImg, getWbiSign } from "#/hot-news/util/wbi";
 import { isJsonString } from "@/utils/verify";
 import { getBiliTicket } from "#/hot-news/util/ticket";
 import { transformCookie } from "#/hot-news/util/format";
+import { checkCookie } from "#/hot-news/util/bili-cookie";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -74,19 +75,6 @@ const BILIBILI_SEARCH_HEADES: BiliBiliHeader = {
 }
 
 const userAgent = new UserAgent( [ { deviceCategory: 'desktop' }, /Safari|Chrome|FireFox|Edg/ ] );
-/**
- * bili fp
- */
-type BiliFp = {
-	buvid_fp?: string;
-	payload: string;
-}
-const fp: BiliFp = {
-	buvid_fp: undefined,
-	payload: ""
-}
-// 风控时fp_count加1，超过10次则重置buvid_fp
-let fp_count = 0;
 
 export const getNews: ( channel?: string ) => Promise<string> = async ( channel: string = 'toutiao' ) => {
 	let date = formatDate( new Date() );
@@ -245,19 +233,15 @@ async function gen_payload( randomUA: UserAgent, uuid: string, headers: BiliBili
  * 上报并激活指纹Cookie
  */
 async function submitGateway( randomUA: UserAgent, uuid: string, headers: BiliBiliHeader ): Promise<void> {
-	// 如果已经生成的有就一直用，初次会 -352 ，后续就可正常使用，且该 cookie 值服务端会自动续期
-	if ( !fp.buvid_fp ) {
-		const payload = await gen_payload( randomUA, uuid, headers );
-		fp.buvid_fp = gen_buvid_fp( payload, 31 );
-		fp.payload = payload;
-	}
+	const payload = await gen_payload( randomUA, uuid, headers );
+	const buvid_fp = gen_buvid_fp( payload, 31 );
 	const cookie = transformCookie( headers.Cookie );
 	headers.Cookie = transformCookie( {
 		...cookie,
-		buvid_fp: fp.buvid_fp
+		buvid_fp,
 	} )
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
-		payload: fp.payload
+		payload
 	}, {
 		headers
 	} )
@@ -269,9 +253,11 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 	
 	// 获取Cookie
 	if ( !config.cookie ) {
-		const uuid = get_uuid();
-		await getCookies( uuid, BILIBILI_DYNAMIC_HEADERS );
-		await submitGateway( userAgent, uuid, BILIBILI_DYNAMIC_HEADERS );
+		if ( !checkCookie( BILIBILI_DYNAMIC_HEADERS.Cookie ) ) {
+			const uuid = get_uuid();
+			await getCookies( uuid, BILIBILI_DYNAMIC_HEADERS );
+			await submitGateway( userAgent, uuid, BILIBILI_DYNAMIC_HEADERS );
+		}
 	} else {
 		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	}
@@ -281,7 +267,7 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 		host_mid: uid,
 		timezone_offset: -480,
 		platform: 'web',
-		features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote,decorationCard,forwardListHidden,ugcDelete,onlyfansQaCard",
+		features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote,decorationCard,forwardListHidden,onlyfansAssetsV2,ugcDelete,onlyfansQaCard",
 		web_location: "333.999",
 		...getDmImg(),
 		"x-bili-device-req-json": { "platform": "web", "device": "pc" },
@@ -301,14 +287,8 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 	} );
 	
 	if ( resp.data.code === -352 ) {
-		fp_count++;
-		bot.logger.warn( `获取B站[${ uid }]动态遇到风控。` );
-		if ( fp_count > 10 ) {
-			bot.logger.info( "风控次数超过10次，将重置指纹并重新生成。" );
-			fp.buvid_fp = undefined;
-			fp.payload = "";
-			fp_count = 0;
-		}
+		bot.logger.warn( `获取B站[${ uid }]动态遇到风控，已重置设备指纹。` );
+		BILIBILI_DYNAMIC_HEADERS.Cookie = "";
 		return [];
 	}
 	
@@ -604,7 +584,12 @@ export async function set60sFromApi( api: string = API["60s_api"] ): Promise<boo
 		throw new Error( response.data.message );
 	}
 	
-	const { news, tip, cover } = response.data.data;
+	const { news, tip, cover, updated } = response.data.data;
+	const isToday = moment( updated ).isSame( Date.now(), 'day' );
+	if ( !isToday ) {
+		// 如果不是当天的，则不返回数据
+		return false;
+	}
 	
 	const sixtyNews: SixtyNews = {
 		title: "在这里每天60秒读懂世界",
@@ -715,9 +700,16 @@ export async function searchBili( keyword: string, search_type: string = "bili_u
 	const referer = new URL( BILIBILI_SEARCH_HEADES.Referer );
 	referer.searchParams.set( "keywords", keyword );
 	BILIBILI_SEARCH_HEADES.Referer = referer.toString();
-	const uuid = get_uuid();
-	await getCookies( uuid, BILIBILI_SEARCH_HEADES );
-	await submitGateway( userAgent, uuid, BILIBILI_SEARCH_HEADES );
+	// 获取Cookie
+	if ( !config.cookie ) {
+		if ( !checkCookie( BILIBILI_SEARCH_HEADES.Cookie ) ) {
+			const uuid = get_uuid();
+			await getCookies( uuid, BILIBILI_SEARCH_HEADES );
+			await submitGateway( userAgent, uuid, BILIBILI_SEARCH_HEADES );
+		}
+	} else {
+		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
+	}
 	const data = {
 		keyword,
 		search_type,
@@ -754,6 +746,11 @@ export async function searchBili( keyword: string, search_type: string = "bili_u
 		},
 		headers: BILIBILI_SEARCH_HEADES
 	} );
+	if ( response.data.code === -352 ) {
+		bot.logger.warn( `搜索: ${ keyword } 失败，本次搜索触发了风控策略，已重置设备指纹。` );
+		BILIBILI_SEARCH_HEADES.Cookie = "";
+		return [];
+	}
 	if ( response.data.code !== 0 ) {
 		return Promise.reject( response.data.message );
 	}
