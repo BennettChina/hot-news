@@ -38,13 +38,7 @@ export class SixtySecondsWatchNews implements NewsService {
 		
 		if ( !qq_list?.size ) return;
 		
-		let msg: Sendable = "";
-		try {
-			msg = await this.getInfo();
-		} catch ( error ) {
-			throw error;
-		}
-		
+		let msg = await this.getInfo();
 		if ( SixtySecondsWatchNews.FAIL_MSG === msg ) {
 			bot.logger.info( `[hot-news] - 暂未获取到60s新闻图，将在 30 分钟后再次尝试获取。` );
 			throw new RetryError( "暂未获取到60s新闻图" );

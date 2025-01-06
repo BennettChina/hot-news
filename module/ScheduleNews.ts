@@ -43,32 +43,46 @@ export class ScheduleNews {
 	
 	public createNewsSchedule(): void {
 		scheduleJob( "hot-news", "0 30 8 * * *", async () => {
+			// 随机秒数
 			const sec: number = getRandomNumber( 0, 180 );
-			const time = new Date().setSeconds( sec * 10 );
+			const time = new Date();
+			time.setSeconds( time.getSeconds() + sec * 10 );
 			
 			const job: Job = scheduleJob( time, async () => {
-				NewsServiceFactory.instance( CHANNEL_NAME.toutiao ).handler().then( () => {
+				try {
+					await NewsServiceFactory.instance( CHANNEL_NAME.toutiao ).handler();
 					this.bot.logger.debug( "[hot-news] 每日热点新闻定时任务已处理完成." );
-				} );
-				NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler().then( () => {
-					this.bot.logger.debug( "[hot-news] 60s新闻定时任务已处理完成." );
-				} ).catch( async ( err ) => {
-					if ( err instanceof RetryError ) {
-						this.bot.logger.warn( "[hot-news]", err.message, "将在 30 分钟后重试。" );
-						try {
-							await wait( 30 * 60 * 1000 );
-							await NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler();
-						} catch ( e ) {
-							this.bot.logger.error( "[hot-news] [60s新闻]", e );
-						}
-						return;
-					}
-					this.bot.logger.error( "[hot-news] [60s新闻]", err );
-				} );
-				job.cancel();
+					
+					await this.process60sNews();
+				} catch ( err ) {
+					this.bot.logger.error( "[hot-news] 任务执行失败:", err );
+				} finally {
+					job.cancel();
+				}
 			} );
 		} );
 		this.bot.logger.info( "[hot-news] 每日热点新闻定时任务已创建完成..." );
+	}
+	
+	
+	private async process60sNews(): Promise<void> {
+		try {
+			await NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler();
+			this.bot.logger.debug( "[hot-news] 60s新闻定时任务已处理完成." );
+		} catch ( err ) {
+			if ( err instanceof RetryError ) {
+				this.bot.logger.warn( "[hot-news]", err.message, "将在 30 分钟后重试。" );
+				try {
+					await wait( 30 * 60 * 1000 );
+					await NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler();
+					this.bot.logger.debug( "[hot-news] 60s新闻重试任务成功完成." );
+				} catch ( e ) {
+					this.bot.logger.error( "[hot-news] [60s新闻] 重试失败:", e );
+				}
+			} else {
+				this.bot.logger.error( "[hot-news] [60s新闻]", err );
+			}
+		}
 	}
 	
 	public initSchedule(): void {
