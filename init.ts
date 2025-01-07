@@ -146,6 +146,7 @@ export default definePlugin( {
 	},
 	async unmounted() {
 		// 卸载插件时把定时任务清掉
+		cancelJob( "hot-news" );
 		cancelJob( "hot-news-bilibili-dynamic-job" );
 		cancelJob( "hot-news-bilibili-live-job" );
 		cancelJob( "hot-news-moyu-job" );
