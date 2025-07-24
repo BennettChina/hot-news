@@ -1,6 +1,6 @@
 const template = `<div class="container">
 	<header>
-		<img :src="banner" referrerpolicy="no-referrer"/>
+		<img :src="banner" alt="banner" class="banner" referrerpolicy="no-referrer"/>
 	</header>
 	<main>
 		<h3>NEWS</h3>
