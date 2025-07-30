@@ -190,7 +190,7 @@ export default defineComponent( {
 				state.majorItems = drawItems.map( item => {
 					let url;
 					if ( count > 1 ) {
-						url = `${ item.src || item.url }@416w_416h_1e_1c.webp`
+						url = `${ item.src || item.url }@264w_264h_1e_1c.webp`
 						return {
 							style: {},
 							url
