@@ -240,6 +240,20 @@ async function submitGateway( randomUA: UserAgent, uuid: string, headers: BiliBi
 		...cookie,
 		buvid_fp,
 	} )
+	// const axe = await getPublicKey( headers );
+	// const { version } = axe;
+	// const { data,key } = await encryptData( "", JSON.stringify(axe), cookie.buvid3 );
+	// const body = {
+	// 	header: {
+	// 		encode_type: 2,
+	// 		payload_type: 4,
+	// 		encoded_aes_key: key,
+	// 		ts: Date.now(),
+	// 		encoded_version: version || ""
+	// 	},
+	// 	encrypt_payload: data
+	// }
+	// await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbCongLing", body, {
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
 		payload
 	}, {
@@ -256,7 +270,7 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 		if ( !checkCookie( BILIBILI_DYNAMIC_HEADERS.Cookie ) ) {
 			const uuid = get_uuid();
 			await getCookies( uuid, BILIBILI_DYNAMIC_HEADERS );
-			await submitGateway( userAgent, uuid, BILIBILI_DYNAMIC_HEADERS );
+			// await submitGateway( userAgent, uuid, BILIBILI_DYNAMIC_HEADERS );
 		}
 	} else {
 		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
@@ -268,10 +282,10 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 		timezone_offset: -480,
 		platform: 'web',
 		features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote,decorationCard,forwardListHidden,onlyfansAssetsV2,ugcDelete,onlyfansQaCard",
-		web_location: "333.999",
+		web_location: "333.1387",
 		...getDmImg(),
 		"x-bili-device-req-json": { "platform": "web", "device": "pc" },
-		"x-bili-web-req-json": { "spm_id": "333.999" }
+		"x-bili-web-req-json": { "spm_id": "333.1387" }
 	}
 	const { wts, w_rid } = await getWbiSign( data, BILIBILI_DYNAMIC_HEADERS );
 	const params = {
