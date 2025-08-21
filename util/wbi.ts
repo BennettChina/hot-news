@@ -109,6 +109,21 @@ export async function getWbiSign( data: object, headers: object ): Promise<WbiSi
 	return encWbi( data, img_key, sub_key );
 }
 
+function getWh( width: number = 1920, height: number = 1080 ): number[] {
+	const res0: number = width;
+	const res1: number = height;
+	const rnd: number = Math.floor( 114 * Math.random() );
+	return [ 2 * res0 + 2 * res1 + 3 * rnd, 4 * res0 - res1 + rnd, rnd ];
+}
+
+function getOf( scroll_top: number = 10, scroll_left: number = 10 ): number[] {
+	const res0: number = scroll_top;
+	const res1: number = scroll_left;
+	const rnd: number = Math.floor( 514 * Math.random() );
+	return [ 3 * res0 + 2 * res1 + rnd, 4 * res0 - 4 * res1 + 2 * rnd, rnd ];
+}
+
+
 /**
  * https://github.com/SocialSisterYi/bilibili-API-collect/issues/868#issuecomment-1919593911
  *
@@ -122,7 +137,7 @@ export const getDmImg = (): DmImg => {
 	// 这俩值可以不用随机，直接用实际的真实值即可。
 	const dm_img_str = "V2ViR0wgMS4wIChPcGVuR0wgRVMgMi4wIENocm9taXVtKQ";// base64Decode = WebGL 1.0 (OpenGL ES 2.0 Chromium)
 	const dm_cover_img_str = "QU5HTEUgKEludGVsLCBBTkdMRSBNZXRhbCBSZW5kZXJlcjogSW50ZWwoUikgVUhEIEdyYXBoaWNzIDYzMCwgVW5zcGVjaWZpZWQgVmVyc2lvbilHb29nbGUgSW5jLiAoSW50ZW";// base64Decode = ANGLE (Intel Inc., Intel(R) UHD Graphics 630, OpenGL 4.1)Google Inc. (Intel Inc
-	const dm_img_inter = { ds: [], wh: [ 0, 0, 0 ], of: [ 0, 0, 0 ] };
+	const dm_img_inter = { ds: [], wh: getWh(), of: getOf() };
 	return {
 		dm_img_list,
 		dm_img_str,
