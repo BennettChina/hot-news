@@ -16,13 +16,14 @@ const template = `<div class="box-main">
 		<slot/>
 	</div>
 </div>
-<div :class="decorateClass" v-if="decorate">
-	<img class="decorate-img" :src="decorate.card_url" alt="decorate"/>
-	<span :style="{color: decorate.fan.color}" v-if="decorate.type===3">{{decorate.fan.num_str}}</span>
+<div :class="decorateClass" v-if="decoration_card">
+	<img class="decorate-img" :src="decoration_card.card_url" alt="decoration_card"/>
+	<span :style="{color: decoration_card.fan.color}" v-if="decoration_card.fan.is_fan">{{decoration_card.fan.num_desc}}</span>
 </div>
 </div>`;
 
 import { toHumanize } from "../../../assets/js/utils.js";
+
 const { defineComponent, reactive, toRefs } = Vue;
 
 export default defineComponent( {
@@ -30,7 +31,7 @@ export default defineComponent( {
 	template,
 	props: {
 		avatar: Object,
-		decorate: Object,
+		decoration_card: Object,
 		face_nft: Boolean,
 		following: Boolean,
 		label: String,
@@ -59,7 +60,7 @@ export default defineComponent( {
 			isPersonal: props.official_verify.type === 0,
 			isBigVip: props.vip.status === 1,
 			isSmallVip: props.vip.status === 1 && aprilFoolsDay,
-			decorateClass: props.decorate?.type === 1 ? "decorate-dom-type1" : "decorate-dom-type3"
+			decorateClass: props.decoration_card?.fan?.is_fan ? "decorate-dom-type3" : "decorate-dom-type1"
 		} );
 		
 		return {
