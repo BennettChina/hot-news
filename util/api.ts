@@ -44,7 +44,7 @@ const API = {
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
 	"60s": 'https://www.zhihu.com/api/v4/columns/c_1715391799055720448/items?limit=2',
-	"60s_api": "https://60s-api-cf.viki.moe/v2/60s",
+	"60s_api": "https://60s.viki.moe/v2/60s",
 	biliCard: "https://api.bilibili.com/x/web-interface/card",
 	biliStat: "https://api.bilibili.com/x/relation/stat",
 	biliLiveUserInfo: "https://api.live.bilibili.com/live_user/v1/Master/info",
@@ -568,7 +568,9 @@ export async function set60s(): Promise<boolean> {
 			title: "在这里每天60秒读懂世界",
 			banner: title_image,
 			time: todayStr,
-			data: news
+			data: news,
+			date: moment( updated * 1000 ).format( "YYYY-MM-DD" ),
+			updated_at: updated * 1000
 		};
 		
 		await bot.redis.setString( key, JSON.stringify( sixtyNews ), 3600 );
@@ -598,7 +600,7 @@ export async function set60sFromApi( api: string = API["60s_api"] ): Promise<boo
 		throw new Error( response.data.message );
 	}
 	
-	const { news, tip, cover, updated_at } = response.data.data;
+	const { date, news, tip, cover, updated_at } = response.data.data;
 	const isToday = moment( updated_at ).isSame( Date.now(), 'day' );
 	if ( !isToday ) {
 		// 如果不是当天的，则不返回数据
@@ -610,7 +612,9 @@ export async function set60sFromApi( api: string = API["60s_api"] ): Promise<boo
 		banner: cover,
 		time: todayStr,
 		data: news,
-		tip
+		tip,
+		date,
+		updated_at
 	};
 	
 	await bot.redis.setString( key, JSON.stringify( sixtyNews ), 3600 );

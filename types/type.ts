@@ -853,6 +853,8 @@ export type SixtyNews = {
 	time: string;
 	data: string[];
 	tip?: string;
+	date?: string;
+	updated_at?: number;
 }
 
 export interface BiliBiliHeader extends Record<string, string> {
