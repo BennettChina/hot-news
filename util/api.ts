@@ -281,9 +281,10 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 		host_mid: uid,
 		timezone_offset: -480,
 		platform: 'web',
-		features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote,decorationCard,forwardListHidden,onlyfansAssetsV2,ugcDelete,onlyfansQaCard",
+		features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote,forwardListHidden,decorationCard,commentsNewVersion,onlyfansAssetsV2,ugcDelete,onlyfansQaCard,avatarAutoTheme,sunflowerStyle,cardsEnhance,eva3CardOpus,eva3CardVideo,eva3CardComment,eva3CardUser",
 		web_location: "333.1387",
 		...getDmImg(),
+		"x-bili-locale-json": { "c_locale": { "language": "zh", "script": "Hans" }, "always_translate": false },
 		"x-bili-device-req-json": { "platform": "web", "device": "pc" },
 		"x-bili-web-req-json": { "spm_id": "333.1387" }
 	}
